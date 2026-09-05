@@ -47,6 +47,7 @@
   .quickbar button{ flex:1; background:#fff; border:none; color:var(--field); padding:11px 4px; border-radius:10px; font-size:12px; font-weight:700; box-shadow:var(--shadow); transition:transform 0.08s; }
   .quickbar button:active{ transform:scale(0.95); }
   .quickbar button.danger{ color:var(--clay); }
+  .quickbar button.save{ color:var(--field-2); }
 
   .tabbar{ position: fixed; left:0; right:0; bottom:0; height:54px; z-index:20; display:flex; background: var(--ink); box-shadow: 0 -2px 10px rgba(0,0,0,0.25); box-sizing:border-box; }
   .tab{ flex:1; text-align:center; padding:12px 4px 10px; color:#8FA098; font-size:11px; text-transform:uppercase; letter-spacing:0.07em; font-weight:600; cursor:pointer; border-top:2px solid transparent; transition:color 0.15s; }
@@ -1144,6 +1145,7 @@ function renderQuickbar(){
   <div class="quickbar">
     <button onclick="undo()" ${state.history.length?'':'disabled'}>${t('btn_undo')}</button>
     <button onclick="openChangeBatterSheet()">${t('btn_batter')}</button>
+    <button class="save" onclick="saveGame()">Save</button>
     <button class="danger" onclick="manualEndHalfInning()">${t('btn_end_half')}</button>
     <button class="danger" onclick="endGame()">${t('btn_end_game')}</button>
   </div>`;
