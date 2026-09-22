@@ -55,7 +55,8 @@
   .tab{ flex:1; text-align:center; padding:0 4px; color:#8FA098; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; font-weight:600; cursor:pointer; border-top:2px solid transparent; transition:color 0.15s; line-height:1.1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
   .tab.active{ color:var(--amber-2); border-top:2px solid var(--amber); }
 
-  .screen{ flex:1; padding: 16px 14px 14px; padding-bottom: 82px; }
+  .screen{ flex:1; padding: 16px 14px 14px; }
+  .screen.with-tabbar{ padding-bottom: 82px; }
   h2.section-title{ font-size:11.5px; text-transform:uppercase; letter-spacing:0.12em; color:#8C8570; font-weight:700; margin: 20px 0 9px; }
   h2.section-title:first-child{ margin-top:0; }
   .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:15px; margin-bottom:12px; box-shadow:var(--shadow); }
@@ -74,9 +75,10 @@
   .btn.block{ width:100%; margin-top:6px; }
   .btn:disabled{ opacity:0.35; box-shadow:none; }
 
+  .btn.compact{ padding:10px 6px; min-height:40px; font-size:12.5px; letter-spacing:0; }
   .teamtabs{ display:flex; gap:8px; margin-bottom:10px; }
-  .teamtabs button{ flex:1; padding:11px; border-radius:11px; font-size:13px; font-weight:700; background:#fff; color:var(--ink); border:1.5px solid var(--line); }
-  .teamtabs button.active{ background:linear-gradient(155deg, var(--field-2), var(--field)); color:#fff; border-color:transparent; box-shadow:var(--shadow); }
+  .teamtabs button{ flex:1; padding:9px; border-radius:9px; font-size:13px; font-weight:700; background:#fff; color:#8C8570; border:1.5px solid var(--line); box-shadow:none; }
+  .teamtabs button.active{ background:#F0F7F3; color:var(--field-2); border-color:var(--field-2); }
 
   .roster-row{ padding:6px 0; border-bottom:1px solid var(--line); }
   .roster-row:last-child{ border-bottom:none; }
@@ -89,13 +91,55 @@
   .roster-row-actions{ display:flex; gap:6px; margin-top:6px; justify-content:flex-end; flex-wrap:wrap; }
   .roster-row-actions button{ flex:none; }
   .bench-divider{ font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:#A39C88; font-weight:800; margin:10px 0 4px; padding-top:8px; border-top:1px dashed var(--line); }
+  .ocr-flag{ font-size:10px; font-weight:700; color:var(--clay); background:#F7EBE3; padding:2px 7px; border-radius:8px; white-space:nowrap; flex:none; }
+  .spinner{ width:34px; height:34px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--field-2); margin:30px auto; animation:spin 0.8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .loading-text{ text-align:center; font-size:13px; color:#8C8570; font-weight:600; margin-bottom:30px; }
+
+  /* ---------- Pre-game roster editor (Batting Order / Bench, drag-to-reorder, import) ---------- */
+  .pg-teamname{ font-size:15px; margin-bottom:4px; margin-top:10px; }
+  .pg-teamname:disabled{ background:#EEEAE0; color:#8C8570; border-color:#DCD6C4; -webkit-text-fill-color:#8C8570; opacity:1; }
+  .import-row{ display:flex; gap:8px; margin-top:4px; }
+  .import-btn{ flex:1; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; background:#fff; border:1px solid var(--line); border-radius:8px; height:38px; font-size:11.5px; font-weight:600; color:#6b6552; box-shadow:none; }
+  .import-btn svg{ width:15px; height:15px; }
+  .import-btn.active{ border-color:var(--field-2); background:#F0F7F3; }
+  .paste-panel{ margin-top:10px; border-top:1px dashed var(--line); padding-top:10px; }
+  .paste-panel textarea{ width:100%; min-height:74px; padding:10px; border:1.5px solid var(--line); border-radius:10px; font-size:13px; background:#FCFBF7; color:var(--ink); font-family:inherit; resize:vertical; margin-bottom:0; }
+  .paste-preview{ font-size:11.5px; color:#5B5648; background:#FAF8F2; border-radius:8px; padding:8px 10px; margin-top:8px; max-height:110px; overflow-y:auto; }
+  .paste-preview div{ padding:2px 0; }
+
+  .group-label{ display:flex; align-items:center; justify-content:space-between; margin:14px 0 6px; }
+  .group-label:first-of-type{ margin-top:14px; }
+  .group-label span.txt{ font-size:13.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:var(--field-2); }
+  .group-label.bench span.txt{ color:var(--clay); }
+  .group-count{ font-size:12px; color:#A39C88; font-weight:700; }
+
+  .pg-roster-list{ border-radius:10px; padding-bottom:18px; min-height:20px; }
+  .pg-row-wrap{ display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+  .pg-row{ display:flex; align-items:center; gap:5px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:3px 6px; flex:1; min-width:0; touch-action:pan-y; }
+  .pg-row.pg-dragging{ opacity:0.35; }
+  .pg-drag-ghost{ position:fixed; z-index:50; pointer-events:none; box-shadow:0 8px 24px rgba(0,0,0,0.22); border-color:var(--amber); background:#FFFDF5; }
+  .pg-drop-line{ height:3px; background:var(--amber); border-radius:2px; margin:-3px 0 6px; }
+  .pg-grip{ flex:none; width:22px; height:32px; display:flex; align-items:center; justify-content:center; color:#B9B2A0; cursor:grab; touch-action:none; border-radius:6px; }
+  .pg-grip:active{ cursor:grabbing; color:var(--field-2); background:#F2EFE6; }
+  .pg-grip svg{ width:14px; height:18px; display:block; }
+  .pg-slot-num{ flex:none; width:24px; text-align:center; font-size:13px; font-weight:800; color:#8C8570; }
+  .pg-slot-num.pg-dash{ color:#C9C2AC; }
+  input.pg-num{ width:40px; flex:none; text-align:center; font-weight:700; padding:6px 2px; font-size:14px; border:1.5px solid var(--line); border-radius:7px; background:#FCFBF7; margin-bottom:0; }
+  input.pg-name{ flex:1 1 auto; min-width:0; width:0; padding:6px 8px; font-size:15px; border:1.5px solid var(--line); border-radius:7px; background:#FCFBF7; margin-bottom:0; }
+  .pg-icon-btn{ width:24px; height:24px; min-height:auto; border-radius:6px; font-size:12px; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--line); background:#F2EFE6; color:var(--ink); flex:none; padding:0; box-shadow:none; }
+  .pg-icon-btn.pg-remove{ color:var(--clay); border-color:var(--clay); background:#fff; }
+  .pg-icon-btn.pg-sub{ color:var(--field-2); border-color:var(--field-2); background:#fff; font-weight:900; }
+  .btn.pg-row-height{ height:38px; line-height:38px; padding:0 10px; min-height:auto; font-size:12px; font-weight:700; border-radius:8px; margin:0 0 4px; width:100%; }
+  .empty-slot{ font-size:11px; color:#C9C2AC; font-style:italic; padding:14px 4px; min-height:40px; display:flex; align-items:center; justify-content:center; text-align:center; border:1.5px dashed var(--line); border-radius:8px; }
+  .auto-note{ display:flex; gap:8px; align-items:flex-start; background:#FFF8E6; border:1px solid var(--amber-2); border-radius:10px; padding:9px 11px; font-size:11.5px; color:#7a5b00; margin-top:12px; }
 
   .diamond-wrap{ display:flex; justify-content:center; padding: 6px 0 2px; }
   .diamond-wrap svg{ width:75%; max-width:320px; height:auto; display:block; }
   .diamond-wrap.sm svg{ width:52%; max-width:200px; }
-  .diamond-wrap.compact{ padding:0 0 4px; margin-top:-16px; }
+  .diamond-wrap.compact{ padding:0 0 4px; margin-top:-4px; }
   .diamond-inner{ position:relative; width:318px; max-width:88%; margin:0 auto; }
-  .diamond-inner svg{ width:100%; height:auto; display:block; }
+  .diamond-inner svg{ width:100%; height:auto; display:block; overflow:visible; }
   .corner-tag{ position:absolute; font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#6b6552; line-height:1.3; }
   .corner-tag.bl{ left:2%; bottom:4%; }
   .corner-tag.br{ right:2%; bottom:4%; text-align:right; }
@@ -174,6 +218,7 @@
 
   .sheet-backdrop{ position:fixed; inset:0; background:rgba(15,20,17,0.45); z-index:30; backdrop-filter:blur(1px); }
   .sheet{ position:fixed; left:0; right:0; bottom:0; background:#fff; border-radius:20px 20px 0 0; padding:18px 16px; z-index:31; max-height:85vh; overflow-y:auto; box-shadow: 0 -8px 30px rgba(0,0,0,0.28); }
+  .sheet.tall{ max-height:96vh; }
   .sheet h3{ margin:0 0 12px; font-size:15px; font-weight:800; }
   .runner-row{ border:1.5px solid var(--line); border-radius:12px; padding:11px; margin-bottom:8px; }
   .out-block{ border:1.5px solid var(--line); border-radius:12px; padding:11px; margin-bottom:9px; }
@@ -242,16 +287,26 @@
   .gameover-banner .go-score{ flex:none; font-size:32px; font-weight:900; font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; letter-spacing:0.01em; color:var(--amber-2); padding:0 4px; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 </head>
 <body>
 <div id="app"></div>
 <script>
 // ---------------- STATE ----------------
-function makeDefaultPlayers(){ return Array.from({length:9}, ()=>({id:uid(), name:'', num:''})); }
+function makeDefaultPlayers(){ return Array.from({length:9}, ()=>({id:uid(), name:'', num:'', group:'lineup'})); }
 function uid(){ return 'p'+Math.random().toString(36).slice(2,9); }
 function newTeam(name){ return { name, players: makeDefaultPlayers(), lineup: [], battingIdx:0, stats:{}, pitchStats:{}, currentPitcherId:null, subHistory:{} }; }
 
-const APP_VERSION = '10.0';
+const APP_VERSION = '10.1';
+// Material Symbols Outlined "document_scanner" path (Apache 2.0) — used on the roster Scan button.
+const SCAN_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex:none;"><path d="M2 6V1h5v2H4v3Zm18 0V3h-3V1h5v5ZM2 23v-5h2v3h3v2Zm15 0v-2h3v-3h2v5ZM7 20q-.825 0-1.412-.587Q5 18.825 5 18V6q0-.825.588-1.412Q6.175 4 7 4h10q.825 0 1.413.588Q19 5.175 19 6v12q0 .825-.587 1.413Q17.825 20 17 20Zm2-10h6V8H9Zm0 3h6v-2H9Zm0 3h6v-2H9Z"/></svg>';
+// Material Symbols Outlined "photo_library" path (Apache 2.0) — used on the roster "From Image" button.
+const LIBRARY_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex:none;"><path d="M20 4v12H8V4h12m0-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 9.67 1.69 2.26 2.48-3.1L19 15H9zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/></svg>';
+// Material Icons "content_copy" (Apache 2.0) — used on the roster "Paste List" button.
+const PASTE_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex:none;"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
+// Drag handle (6-dot grip) — pre-game Batting Order / Bench rows only.
+const GRIP_ICON = '<svg viewBox="0 0 12 20" fill="currentColor"><circle cx="3" cy="3" r="1.6"/><circle cx="9" cy="3" r="1.6"/><circle cx="3" cy="10" r="1.6"/><circle cx="9" cy="10" r="1.6"/><circle cx="3" cy="17" r="1.6"/><circle cx="9" cy="17" r="1.6"/></svg>';
 let state = {
   screen: 'setup',
   setupError: null,
@@ -285,7 +340,11 @@ let state = {
   pendingBatterOut: null,
   pendingBatterOutAt: null,
   pendingBatterSeq: null,
-  pendingOutOrder: null
+  pendingOutOrder: null,
+
+  importFirstNumberMeaning: 'order', // 'order' | 'jersey' — meaning of the first bare number in pasted/scanned text
+  pasteDraftText: '',
+  pastePanelOpen: false
 };
 
 // ---------------- I18N ----------------
@@ -293,10 +352,23 @@ const STRINGS = {
   en: {
     tab_roster:'Roster', tab_live:'Live', tab_scorebook:'Scorebook', tab_box:'Box Score',
     hdr_save_load:'Save / Load Game', btn_save_game:'⬇ Save Game', btn_load_game:'⬆ Load Game',
+    save_load_hint:'Save downloads a file with the full game state — scores, stats, rosters, everything. Load it later (even on another device) to pick up right where you left off. Loading replaces whatever is currently on screen.',
     hdr_settings:'Game Settings',
     lbl_first_bat:'Who bats first (top of inning 1)',
     lbl_pitching:'Pitching stats', btn_track_pitching:'Track pitching', btn_no_pitching:'No pitcher tracking',
-    hdr_rosters:'Rosters', btn_add_row:'+ Add Row', btn_start_game:'Start Game', btn_quick_start:'Quick Start (auto-number 1-9)',
+    hdr_rosters:'Rosters', btn_add_row:'+ Add Row', btn_start_game:'Start Game',
+    btn_scan:'Scan', btn_from_image:'Image', btn_paste:'Text', quick_import:'Import Players Details',
+    lbl_paste:'Paste Numbers and/or Names', paste_placeholder:'Example (Batting Order first):\n1 Shohei Ohtani\n2 17 Aaron Judge\n\nNames only:\nShohei Ohtani\nAaron Judge',
+    btn_paste_preview:'Preview', btn_paste_add:'Add',
+    lbl_first_number_is:'First number is:', btn_first_num_order:'Batting Order', btn_first_num_jersey:'Jersey #',
+    hdr_batting_order:'Batting Order', hdr_bench:'Bench',
+    lineup_empty:'Drag or add a player here to build the batting order', bench_empty:'No bench players',
+    rosters_from_rows_note:'Rosters will be created based on rows in Batting Order and Bench, including empty rows.',
+    scan_crop_title:'Crop & Straighten', scan_crop_hint:'Drag on the photo to crop tightly around the names — this makes recognition far more accurate.|Rotate or nudge the tilt if the photo is angled.',
+    btn_rotate_left:'Rotate Left', btn_rotate_right:'Rotate Right', lbl_fine_tilt:'Fine tilt correction',
+    btn_apply_crop:'Apply Crop', btn_reset_crop:'Reset', btn_continue_scan:'Continue',
+    scan_loading_title:'Scanning photo…', scan_loading_sub:'Reading jersey numbers and names', scan_loading_note:'This can take a few seconds on mobile',
+    btn_scan_retake:'Retake / Cancel', scan_fail:'Could not read that image. Try a clearer, well-lit photo.',
     hdr_at_bat:'At Bat', hdr_result:'Result of At-Bat', grp_on_base:'Batter reaches base / scores', grp_out:'Batter is out',
     grp_on_base_short:'On Base', grp_out_short:'Out',
     btn_undo:'↺ Undo', btn_batter:'Batter', btn_save:'Save', btn_end_half:'End ½ Inn', btn_end_game:'End Game',
@@ -322,10 +394,23 @@ const STRINGS = {
   ja: {
     tab_roster:'名簿', tab_live:'ライブ', tab_scorebook:'スコアブック', tab_box:'ボックススコア',
     hdr_save_load:'試合の保存・読込', btn_save_game:'⬇ 試合を保存', btn_load_game:'⬆ 試合を読込',
+    save_load_hint:'保存すると、スコア・成績・名簿など試合の全データを含むファイルがダウンロードされます。後で（別の端末でも）読み込めば、続きから再開できます。読み込むと現在の画面の内容は上書きされます。',
     hdr_settings:'試合設定',
     lbl_first_bat:'先攻（1回表の攻撃）',
     lbl_pitching:'投手成績', btn_track_pitching:'投手成績を記録', btn_no_pitching:'投手成績を記録しない',
-    hdr_rosters:'名簿', btn_add_row:'+ 行を追加', btn_start_game:'試合開始', btn_quick_start:'クイックスタート（1〜9自動採番）',
+    hdr_rosters:'名簿', btn_add_row:'+ 行を追加', btn_start_game:'試合開始',
+    btn_scan:'スキャン', btn_from_image:'画像', btn_paste:'テキスト', quick_import:'選手情報を取り込む',
+    lbl_paste:'背番号・名前を貼り付け', paste_placeholder:'例（打順が先）：\n1 大谷翔平\n2 17 ジャッジ\n\n名前のみ：\n大谷翔平\nジャッジ',
+    btn_paste_preview:'プレビュー', btn_paste_add:'追加',
+    lbl_first_number_is:'先頭の数字は：', btn_first_num_order:'打順', btn_first_num_jersey:'背番号',
+    hdr_batting_order:'打順', hdr_bench:'ベンチ',
+    lineup_empty:'ここに選手をドラッグ、または追加して打順を作成', bench_empty:'ベンチの選手はいません',
+    rosters_from_rows_note:'名簿は打順とベンチの行数（空欄も含む）に基づいて作成されます。',
+    scan_crop_title:'切り抜き・傾き補正', scan_crop_hint:'名前の部分だけを囲むようにドラッグして切り抜くと、認識精度が大きく上がります。|写真が傾いている場合は回転・微調整してください。',
+    btn_rotate_left:'左に回転', btn_rotate_right:'右に回転', lbl_fine_tilt:'傾きの微調整',
+    btn_apply_crop:'切り抜きを適用', btn_reset_crop:'リセット', btn_continue_scan:'続ける',
+    scan_loading_title:'写真を読み取り中…', scan_loading_sub:'背番号と名前を認識しています', scan_loading_note:'モバイルでは数秒かかることがあります',
+    btn_scan_retake:'撮り直す / キャンセル', scan_fail:'画像を読み取れませんでした。より鮮明で明るい写真でお試しください。',
     hdr_at_bat:'打席', hdr_result:'打席の結果', grp_on_base:'出塁・得点', grp_out:'アウト',
     grp_on_base_short:'出塁', grp_out_short:'アウト',
     btn_undo:'↺ 元に戻す', btn_batter:'打者', btn_save:'保存', btn_end_half:'半回終了', btn_end_game:'試合終了',
@@ -350,6 +435,12 @@ const STRINGS = {
   }
 };
 function t(key){ return (STRINGS[state.lang] && STRINGS[state.lang][key]) || STRINGS.en[key] || key; }
+// Bold label reusing the app's own existing terms for these concepts (hdr_batting_order / lbl_paste's
+// own name+number wording) so English and Japanese phrasing match what's already used elsewhere.
+function pasteLabelHTML(){
+  if(state.lang==='ja') return `<b>打順</b>・<b>名前</b>・<b>背番号</b>を貼り付け`;
+  return `Paste <b>Batting Order</b> and/or <b>Names</b> and/or <b>Jersey Number</b>`;
+}
 function setLang(lang){ state.lang = lang; render(); }
 
 function team(key){ return state.teams[key]; }
@@ -357,6 +448,16 @@ function ensureStats(key,id){ const t=team(key); if(!t.stats[id]) t.stats[id]={A
 function ensurePitch(key,id){ const t=team(key); if(!t.pitchStats[id]) t.pitchStats[id]={outs:0,H:0,R:0,ER:0,BB:0,K:0,pitches:0}; return t.pitchStats[id]; }
 function playerName(key,id){ const p=team(key).players.find(x=>x.id===id); if(!p) return '-'; return p.name.trim(); }
 function playerNum(key,id){ const p=team(key).players.find(x=>x.id===id); return p? (p.num||'-'):'-'; }
+// Position of a player within their team's current batting order (1-based), or null if they're not
+// (currently) in the lineup — e.g. a bench player, or the opposing team's roster.
+function battingOrderNum(key,id){ const idx = team(key).lineup.indexOf(id); return idx>=0 ? idx+1 : null; }
+// "<order>. <name> #<jersey>" — the shared display format for a lineup player (at-bat batter, pitcher).
+function orderNameJersey(key,id){
+  const ord = battingOrderNum(key,id);
+  const nm = playerName(key,id);
+  const num = playerNum(key,id);
+  return `${ord?ord+'. ':''}${nm}${num&&num!=='-'?' #'+num:''}`;
+}
 
 function firstHalfKey(){ return state.firstBatting; }
 function battingKey(){
@@ -445,35 +546,47 @@ function pushHistory(){
 }
 function undo(){
   if(!state.history.length) return;
+  const wasOnSetup = state.screen==='setup';
   const snap = state.history.pop();
   Object.assign(state, snap);
   state.sheet = null;
-  state.screen = state.gameOver ? 'box' : 'game';
+  state.screen = wasOnSetup ? 'setup' : (state.gameOver ? 'box' : 'game');
   render();
 }
 
 // ---------------- GAME FLOW ----------------
+// Every row sitting in Batting Order counts toward the lineup, blank or not — leaving rows blank and
+// hitting Start is the "quick start" path (batting order alone is enough to identify players; jersey
+// numbers are optional and stay blank unless typed in).
+// A Bench row only counts once it has a name or number — an unused blank bench row is just a spare
+// placeholder, not a real player, so it's never turned into a phantom bench member.
+let startGameTriggered = false;
+function handleStartGamePress(e){
+  if(e){ e.preventDefault(); e.stopPropagation(); }
+  const btn = document.getElementById('startGameBtn');
+  if(btn) btn.textContent = '⏳ Starting…';
+  if(startGameTriggered) return;
+  startGameTriggered = true;
+  startGame();
+}
 function startGame(){
   state.setupError = null;
-  if(team('us').players.filter(p=>p.num.trim()!=='').length<1 || team('them').players.filter(p=>p.num.trim()!=='').length<1){
-    state.setupError = 'Enter at least one jersey number for each team before starting.';
-    render();
-    return;
-  }
   ['us','them'].forEach(key=>{
     const t = team(key);
-    const filled = t.players.filter(p=>p.num.trim()!=='');
-    t.lineup = filled.map(p=>p.id);
+    const lineupRows = t.players.filter(p=>(p.group||'lineup')!=='bench');
+    t.lineup = lineupRows.map(p=>p.id);
     t.battingIdx = 0;
-    filled.forEach(p=>ensureStats(key,p.id));
-    if(state.trackPitching && filled.length) t.currentPitcherId = t.currentPitcherId || filled[0].id;
+    lineupRows.forEach(p=>ensureStats(key,p.id));
+    if(state.trackPitching && lineupRows.length) t.currentPitcherId = t.currentPitcherId || lineupRows[0].id;
   });
   if(team('us').lineup.length<1 || team('them').lineup.length<1){
-    state.setupError = 'Both teams need at least one player with a jersey number.';
+    state.setupError = 'Both teams need at least one row in Batting Order.';
+    startGameTriggered = false;
     render();
     return;
   }
   state.gameStarted = true;
+  state.gameOver = false;
   state.screen = 'game';
   render();
   scrollAppToTop();
@@ -494,21 +607,6 @@ function scrollAppToTop(){
     setTimeout(doScroll, 0);
   }
 }
-function quickStart(){
-  ['us','them'].forEach(key=>{
-    const t = team(key);
-    let n = 1;
-    for(let i=0;i<t.players.length && n<=9;i++){
-      if(t.players[i].num.trim()===''){ t.players[i].num = String(n); n++; }
-    }
-    // if a team has no rows at all, give it a minimal auto-numbered roster so Quick Start never silently no-ops
-    if(t.players.length===0){
-      for(let k=1;k<=9;k++) t.players.push({id:uid(), name:'', num:String(k)});
-    }
-  });
-  startGame();
-}
-
 function currentBatterId(){ const t=team(battingKey()); return t.lineup[t.battingIdx]; }
 function nextBatter(key){ const t=team(key); t.battingIdx = (t.battingIdx+1) % t.lineup.length; state.count = {balls:0, strikes:0, fouls:0}; }
 function addBall(){ if(state.count.balls<5) state.count.balls++; render(); }
@@ -832,13 +930,13 @@ function resolveOutcome(kind, runnerChoices){
   const runnerLogNotes = [];
   if(kind==='HR'){
     // every existing runner scores automatically, unambiguous
-    const hrBatterNum = playerNum(teamKey, batterId);
+    const hrBatterNum = battingOrderNum(teamKey, batterId);
     [1,2,3].forEach(b=>{
       const rid = state.bases[b];
       if(rid){ ensureStats(teamKey,rid).R += 1; runsThisPlay++; updateRunnerBox(teamKey, rid, {reached:4}); tagLegsWithBatter(teamKey, rid, b+1, 4, hrBatterNum); }
     });
   } else {
-    const atBatBatterNum = playerNum(teamKey, batterId);
+    const atBatBatterNum = battingOrderNum(teamKey, batterId);
     runnerChoices.slice().sort((a,b)=>b.base-a.base).forEach(r=>{
       const st = ensureStats(teamKey, r.id);
       if(r.choice==='stay') newBases[r.base] = r.id;
@@ -1152,7 +1250,7 @@ function restoreAutosaveIfAny(){
   state.scorebook = data.scorebook || {}; state.count = data.count || {balls:0,strikes:0,fouls:0};
   state.slotSubIndex = data.slotSubIndex || {};
   state.sheet = null; state.history = [];
-  state.screen = data.screen || (state.gameOver ? 'box' : 'game');
+  state.screen = state.gameOver ? 'box' : (state.gameStarted ? 'game' : 'setup');
 }
 // Active unconditionally from page load — not gated on game state, so accidental refreshes are caught
 // even while still filling out rosters (before a game has started) and don't stop being caught once a
@@ -1257,22 +1355,33 @@ function render(){
   const app = document.getElementById('app');
   const prevSheet = app.querySelector('.sheet');
   const savedScrollTop = prevSheet ? prevSheet.scrollTop : null;
-  app.innerHTML = `
-    ${state.gameStarted ? renderScoreboard() : ''}
-    <div class="screen">
-      ${state.screen==='setup' ? renderSetup() : ''}
-      ${state.screen==='game' ? renderGame() : ''}
-      ${state.screen==='box' ? renderBox() : ''}
-      ${state.screen==='scorebook' ? renderScorebookGrid() : ''}
-    </div>
-    ${state.gameStarted && state.screen==='game' && !state.gameOver ? renderQuickbar() : ''}
-    ${state.gameStarted ? renderTabs() : ''}
-    ${state.sheet ? renderSheet() : ''}
-  `;
+  try{
+    app.innerHTML = `
+      ${state.gameStarted ? renderScoreboard() : ''}
+      <div class="screen ${state.gameStarted?'with-tabbar':''}">
+        ${state.screen==='setup' ? renderSetup() : ''}
+        ${state.screen==='game' ? renderGame() : ''}
+        ${state.screen==='box' ? renderBox() : ''}
+        ${state.screen==='scorebook' ? renderScorebookGrid() : ''}
+      </div>
+      ${state.gameStarted && state.screen==='game' && !state.gameOver ? renderQuickbar() : ''}
+      ${state.gameStarted ? renderTabs() : ''}
+      ${state.sheet ? renderSheet() : ''}
+    `;
+  } catch(err){
+    // A thrown error here previously left the OLD DOM in place with no visible sign anything went
+    // wrong — a button's onclick would update state, then silently fail to ever show it, looking
+    // exactly like "the button did nothing." Surface it instead so it's diagnosable.
+    console.error('render() failed:', err);
+    app.innerHTML = `<div style="padding:20px;font-family:monospace;font-size:12px;color:#C9703F;white-space:pre-wrap;">Render error — please screenshot this and report it:\n\n${(err && err.stack) || err}</div>`;
+    return;
+  }
   if(savedScrollTop!==null){
     const newSheet = app.querySelector('.sheet');
     if(newSheet) newSheet.scrollTop = savedScrollTop;
   }
+  if(state.sheet && state.sheet.outcome==='SCAN_CROP') initScanCropCanvas();
+  if(state.screen==='setup') attachPreGameDragHandlers();
   autosaveState();
 }
 
@@ -1363,31 +1472,6 @@ function setScreen(s){ state.screen = s; render(); }
 
 function renderSetup(){
   const tm = team(state.setupTeam);
-  const order = getDisplayOrder(state.setupTeam);
-  const lineupSize = state.gameStarted ? tm.lineup.length : order.length;
-  const rows = order.map((rawIdx, displayPos)=>{
-    const p = tm.players[rawIdx];
-    const inLineup = tm.lineup.includes(p.id);
-    const canRemove = !state.gameStarted || !inLineup;
-    const secondaryButtons = rosterRowActionsHTML(state.setupTeam, p, inLineup, tm, displayPos, lineupSize);
-    const showBenchDivider = state.gameStarted && displayPos===lineupSize && lineupSize<order.length;
-    return `
-    ${showBenchDivider? `<div class="bench-divider">Bench</div>` : ''}
-    <div class="roster-row">
-      <div class="roster-row-top">
-        <input class="roster-num" type="text" placeholder="#" value="${p.num}" tabindex="${rawIdx*2+1}"
-          oninput="onRosterNumInput(${rawIdx}, this.value)">
-        <input class="roster-name" type="text" placeholder="Name (optional)" value="${p.name}" tabindex="${rawIdx*2+2}"
-          oninput="team('${state.setupTeam}').players[${rawIdx}].name=this.value">
-        <button class="btn small ghost roster-icon-btn" tabindex="-1" onclick="movePlayer(${displayPos},-1)">▲</button>
-        <button class="btn small ghost roster-icon-btn" tabindex="-1" onclick="movePlayer(${displayPos},1)">▼</button>
-        ${(state.gameStarted && inLineup) ? `<button class="btn small ghost roster-icon-btn sub" tabindex="-1" onclick="openSubSheet('${state.setupTeam}',${displayPos})">⇄</button>` : ''}
-        ${canRemove? `<button class="btn small clay roster-icon-btn" tabindex="-1" onclick="removeRow(${rawIdx})">✕</button>` : ''}
-      </div>
-      <div class="roster-row-actions" id="rowActions_${rawIdx}" style="${secondaryButtons?'':'display:none;'}">${secondaryButtons}</div>
-    </div>
-  `;}).join('');
-
   return `
     <div class="card" style="padding:9px 12px;">
       <div style="text-align:center;font-size:10px;color:#A39C88;margin-bottom:6px;">Version ${APP_VERSION}</div>
@@ -1404,112 +1488,580 @@ function renderSetup(){
         <button class="btn ghost" onclick="triggerLoad()">${t('btn_load_game')}</button>
       </div>
       <input type="file" id="loadFileInput" accept="application/json" style="display:none" onchange="handleLoadFile(this)">
-      <div style="font-size:11px;color:#8a8373;margin-top:6px;">Save downloads a file with the full game state — scores, stats, rosters, everything. Load it later (even on another device) to pick up right where you left off. Loading replaces whatever is currently on screen.</div>
+      <div style="font-size:11px;color:#8a8373;margin-top:6px;">${t('save_load_hint')}</div>
     </div>
 
     <h2 class="section-title">${t('hdr_settings')}</h2>
     <div class="card">
       <label>${t('lbl_first_bat')}</label>
       <div class="row">
-        <button class="btn ${state.firstBatting==='us'?'':'ghost'}" ${state.gameStarted?'disabled':''} onclick="state.firstBatting='us';render()">${t('btn_your_team_tab')}</button>
-        <button class="btn ${state.firstBatting==='them'?'':'ghost'}" ${state.gameStarted?'disabled':''} onclick="state.firstBatting='them';render()">${t('btn_opponent_tab')}</button>
+        <button class="btn compact ${state.firstBatting==='us'?'':'ghost'}" ${state.gameStarted?'disabled':''} onclick="state.firstBatting='us';render()">${t('btn_your_team_tab')}</button>
+        <button class="btn compact ${state.firstBatting==='them'?'':'ghost'}" ${state.gameStarted?'disabled':''} onclick="state.firstBatting='them';render()">${t('btn_opponent_tab')}</button>
       </div>
       <label style="margin-top:10px;">${t('lbl_pitching')}</label>
       <div class="row">
-        <button class="btn ${state.trackPitching?'':'ghost'}" ${state.gameStarted?'disabled':''} onclick="state.trackPitching=true;render()">${t('btn_track_pitching')}</button>
-        <button class="btn ${!state.trackPitching?'':'ghost'}" ${state.gameStarted?'disabled':''} onclick="state.trackPitching=false;render()">${t('btn_no_pitching')}</button>
+        <button class="btn compact ${state.trackPitching?'':'ghost'}" ${state.gameStarted?'disabled':''} onclick="state.trackPitching=true;render()">${t('btn_track_pitching')}</button>
+        <button class="btn compact ${!state.trackPitching?'':'ghost'}" ${state.gameStarted?'disabled':''} onclick="state.trackPitching=false;render()">${t('btn_no_pitching')}</button>
       </div>
     </div>
 
     <h2 class="section-title">${t('hdr_rosters')}</h2>
-    <div class="teamtabs">
-      <button class="${state.setupTeam==='us'?'active':''}" onclick="state.setupTeam='us';render()">${t('btn_your_team_tab')}</button>
-      <button class="${state.setupTeam==='them'?'active':''}" onclick="state.setupTeam='them';render()">${t('btn_opponent_tab')}</button>
-    </div>
     <div class="card">
-      <label>${t('lbl_team_name')}</label>
-      <input type="text" value="${tm.name}" ${state.gameStarted?'disabled':''} oninput="team('${state.setupTeam}').name=this.value">
-      ${rows}
-      <button class="btn ghost block" onclick="addRow()">${t('btn_add_row')}</button>
+      <div class="teamtabs">
+        <button class="${state.setupTeam==='us'?'active':''}" onclick="state.setupTeam='us';render()">${t('btn_your_team_tab')}</button>
+        <button class="${state.setupTeam==='them'?'active':''}" onclick="state.setupTeam='them';render()">${t('btn_opponent_tab')}</button>
+      </div>
+      <input type="text" class="pg-teamname" value="${tm.name}" ${state.gameStarted?'disabled':''} oninput="team('${state.setupTeam}').name=this.value">
+      <input type="file" id="scanCameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleScanFile(this)">
+      <input type="file" id="scanLibraryInput" accept="image/*" style="display:none" onchange="handleScanFile(this)">
+      ${renderRosterBody(tm)}
     </div>
 
     ${!state.gameStarted?`
     ${state.setupError?`<div class="card" style="border-color:var(--clay); color:var(--clay); font-size:13px; font-weight:700;">${state.setupError}</div>`:''}
-    <button class="btn clay block" onclick="startGame()">${t('btn_start_game')}</button>
-    <button class="btn clay-light block" onclick="quickStart()">${t('btn_quick_start')}</button>
+    <button id="startGameBtn" class="btn clay block" onclick="handleStartGamePress(event)">${t('btn_start_game')}</button>
     `:`<div class="card"><div style="font-size:13px;">Game in progress — you can still edit names/numbers, add substitutes, and reorder here. Use the <b>Batter</b> button in the quick bar to change who's currently up.</div></div>`}
   `;
 }
-function rosterRowActionsHTML(key, p, inLineup, tm, displayPos, lineupSize){
-  return [
-    (state.gameStarted && p.num.trim()!=='' && !inLineup) ? `<button class="btn small" tabindex="-1" onclick="addToLineup('${key}','${p.id}')">+ Add to Lineup</button>` : '',
-    (state.trackPitching && state.gameStarted && p.num.trim()!=='') ? `<button class="btn small ${tm.currentPitcherId===p.id?'':'ghost'}" tabindex="-1" onclick="switchPitcher('${key}','${p.id}')">${tm.currentPitcherId===p.id?'P ✓':'Set P'}</button>` : ''
-  ].filter(Boolean).join('');
+// ---------------- ROSTER EDITOR (Batting Order / Bench) — same layout and drag-to-reorder both
+// before and after the game starts. Before start, "which group a player is in" is just the player's
+// own `group` field, order = position in tm.players. After start, tm.lineup (order matters — it's the
+// batting order Live uses) is the source of truth for Batting Order, and Bench is everyone else; a
+// currently-batting lineup player is subbed out (⇄) rather than removed or dragged to Bench, since
+// pulling them mid-game any other way would corrupt whose turn it is.
+function rosterGroupLists(key){
+  const tm = team(key);
+  if(!state.gameStarted){
+    return { lineup: tm.players.filter(p=>(p.group||'lineup')!=='bench'), bench: tm.players.filter(p=>p.group==='bench') };
+  }
+  const inLineup = new Set(tm.lineup);
+  return { lineup: tm.lineup.map(id=>tm.players.find(p=>p.id===id)).filter(Boolean), bench: tm.players.filter(p=>!inLineup.has(p.id)) };
 }
-function onRosterNumInput(i, val){
+// Inserts newly imported rows starting at the FIRST empty Batting Order row (name AND number both
+// blank), in order, before falling back to appending past the last Batting Order row — so importing
+// into a fresh 9-blank-row roster fills slots 1, 2, 3… instead of stacking after them.
+function insertImportedIntoLineup(tm, rows){
+  let ri = 0;
+  for(let i=0; i<tm.players.length && ri<rows.length; i++){
+    const p = tm.players[i];
+    if((p.group||'lineup')!=='bench' && p.name.trim()==='' && p.num.trim()===''){
+      p.name = rows[ri].name; p.num = rows[ri].num; ri++;
+    }
+  }
+  if(ri<rows.length){
+    const remaining = rows.slice(ri).map(r=>({id:uid(), num:r.num, name:r.name, group:'lineup'}));
+    let insertAt = -1;
+    tm.players.forEach((p,i)=>{ if((p.group||'lineup')!=='bench') insertAt = i; });
+    tm.players.splice(insertAt+1, 0, ...remaining);
+  }
+}
+function renderRosterBody(tm){
+  const { lineup, bench } = rosterGroupLists(state.setupTeam);
+  const importRow = !state.gameStarted ? `
+    <div style="border-top:1px dashed var(--line); margin:0 0 12px;"></div>
+    <label>${t('quick_import')}</label>
+    <div class="import-row">
+      <button class="import-btn ${state.pastePanelOpen?'active':''}" id="pasteToggleBtn" onclick="togglePastePanel()">${PASTE_ICON}<span>${t('btn_paste')}</span></button>
+      <button class="import-btn" onclick="triggerFromImage()">${LIBRARY_ICON}<span>${t('btn_from_image')}</span></button>
+      <button class="import-btn" onclick="triggerScan()">${SCAN_ICON}<span>${t('btn_scan')}</span></button>
+    </div>
+    <div class="paste-panel" id="pastePanel" style="display:${state.pastePanelOpen?'block':'none'};">
+      <label style="text-transform:none; letter-spacing:normal; font-size:12.5px;">${pasteLabelHTML()}</label>
+      <div class="row" style="margin-bottom:8px; align-items:center; gap:8px;">
+        <span style="flex:none; font-size:11.5px; color:#6b6552; font-weight:600;">${t('lbl_first_number_is')}</span>
+        <button class="import-btn ${state.importFirstNumberMeaning==='order'?'active':''}" style="height:34px;" onclick="setImportFirstMeaning('order')">${t('btn_first_num_order')}</button>
+        <button class="import-btn ${state.importFirstNumberMeaning==='jersey'?'active':''}" style="height:34px;" onclick="setImportFirstMeaning('jersey')">${t('btn_first_num_jersey')}</button>
+      </div>
+      <textarea id="pasteBox" oninput="state.pasteDraftText=this.value" placeholder="${t('paste_placeholder')}">${escapeHtml(state.pasteDraftText)}</textarea>
+      <div class="row" style="margin-top:8px;">
+        <button class="btn ghost small" onclick="showPastePreview()">${t('btn_paste_preview')}</button>
+        <button class="btn clay small" onclick="applyPastedRoster()">${t('btn_paste_add')}</button>
+      </div>
+      <div id="pastePreview" class="paste-preview" style="display:none;"></div>
+    </div>
+  ` : '';
+  const rosterNote = !state.gameStarted ? `<div style="font-size:11px;color:#8a8373;margin:10px 0 12px;">${t('rosters_from_rows_note')}</div>` : '';
+  return `
+    ${importRow}
+    ${rosterNote}
+    <div class="group-label">
+      <span class="txt">${t('hdr_batting_order')}</span>
+      <span class="group-count">${lineup.length}</span>
+    </div>
+    <div class="pg-roster-list" id="pgLineupList">
+      ${lineup.length ? lineup.map((p,i)=>pgRowHTML(p,i+1,'lineup')).join('') : `<div class="empty-slot">${t('lineup_empty')}</div>`}
+    </div>
+    <button class="btn ghost pg-row-height" onclick="addRosterRow('lineup')">${t('btn_add_row')}</button>
+
+    <div class="group-label bench">
+      <span class="txt">${t('hdr_bench')}</span>
+      <span class="group-count">${bench.length}</span>
+    </div>
+    <div class="pg-roster-list" id="pgBenchList">
+      ${bench.length ? bench.map(p=>pgRowHTML(p,null,'bench')).join('') : `<div class="empty-slot">${t('bench_empty')}</div>`}
+    </div>
+    <button class="btn ghost pg-row-height" onclick="addRosterRow('bench')">${t('btn_add_row')}</button>
+    ${state.gameStarted ? `<button class="btn ghost pg-row-height" style="margin-top:14px;" ${state.history.length?'':'disabled'} onclick="undo()">${t('btn_undo')}</button>` : ''}
+  `;
+}
+function pgRowHTML(p, slotNum, group){
   const key = state.setupTeam;
   const tm = team(key);
-  if(!tm.players[i]) return;
-  tm.players[i].num = val;
-  const p = tm.players[i];
-  const inLineup = tm.lineup.includes(p.id);
-  const order = getDisplayOrder(key);
-  const displayPos = order.indexOf(i);
-  const lineupSize = state.gameStarted ? tm.lineup.length : order.length;
-  const html = rosterRowActionsHTML(key, p, inLineup, tm, displayPos, lineupSize);
-  const el = document.getElementById('rowActions_'+i);
-  if(el){ el.innerHTML = html; el.style.display = html? '':'none'; }
+  let actionBtn;
+  if(state.gameStarted && group==='lineup'){
+    actionBtn = `<button class="pg-icon-btn pg-sub" title="Substitute" onclick="openSubSheet('${key}', tm_lineup_indexOf('${key}','${p.id}'))">⇄</button>`;
+  } else {
+    const locked = state.gameStarted && (tm.lineup.includes(p.id) || tm.stats[p.id]);
+    actionBtn = locked ? '' : `<button class="pg-icon-btn pg-remove" onclick="removeRosterRow('${p.id}')">✕</button>`;
+  }
+  return `
+  <div class="pg-row-wrap">
+    ${slotNum!==null ? `<div class="pg-slot-num">${slotNum}</div>` : `<div class="pg-slot-num pg-dash">–</div>`}
+    <div class="pg-row" data-id="${p.id}" data-group="${group}">
+      <div class="pg-grip" data-pg-handle>${GRIP_ICON}</div>
+      <input class="pg-num" type="text" placeholder="#" value="${p.num}" maxlength="3" oninput="updateRosterField('${p.id}','num',this.value)">
+      <input class="pg-name" type="text" placeholder="Name" value="${p.name}" oninput="updateRosterField('${p.id}','name',this.value)">
+      ${actionBtn}
+    </div>
+  </div>`;
 }
-function addRow(){ team(state.setupTeam).players.push({id:uid(), name:'', num:''}); render(); }
-function removeRow(i){
-  const t = team(state.setupTeam);
-  const p = t.players[i];
-  // Guard against deleting anyone with a stat record — covers active lineup players AND anyone
-  // previously subbed out (their id leaves `lineup` but their stats entry persists, and Box
-  // Score/CSV/Scorebook still display them via battingRosterIds; deleting the player record here
-  // would break those views into "#- -" while their stats line kept showing).
-  if(state.gameStarted && p && (t.lineup.includes(p.id) || t.stats[p.id])) return;
-  t.players.splice(i,1);
+// small helper so the inline onclick above can look up a fresh index at click-time
+function tm_lineup_indexOf(key,id){ return team(key).lineup.indexOf(id); }
+function updateRosterField(id, field, val){
+  const p = team(state.setupTeam).players.find(x=>x.id===id);
+  if(p) p[field] = val;
+}
+function addRosterRow(group){
+  const key = state.setupTeam;
+  const tm = team(key);
+  const p = {id:uid(), name:'', num:'', group};
+  if(state.gameStarted){
+    pushHistory();
+    tm.players.push(p);
+    if(group==='lineup'){ ensureStats(key,p.id); tm.lineup.push(p.id); }
+  } else {
+    tm.players.push(p);
+  }
   render();
+}
+function removeRosterRow(id){
+  const key = state.setupTeam;
+  const tm = team(key);
+  const removed = tm.players.find(p=>p.id===id);
+  if(!removed) return;
+  if(state.gameStarted && (tm.lineup.includes(id) || tm.stats[id])) return; // guard: never delete anyone with a stat record
+  if(state.gameStarted) pushHistory();
+  tm.players = tm.players.filter(p=>p.id!==id);
+  if(!state.gameStarted && !tm.players.some(p=>(p.group||'lineup')===removed.group)){
+    // Always leave at least one editable row per group pre-game so there's somewhere to type.
+    tm.players.push({id:uid(), name:'', num:'', group:removed.group});
+  }
+  render();
+}
+
+// ---- unified import parser (paste / image / scan all feed this one function) ----
+// firstMeaning: 'order' (first bare number = batting order) or 'jersey' (first bare number = jersey
+// number, and row order top-to-bottom becomes the batting order). When a row carries two number
+// tokens, the first is read per firstMeaning and the second is the other type — order is always
+// explicit in that case regardless of the toggle.
+function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function parseImportText(text, firstMeaning){
+  const lines = (text||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const parts = [];
+  lines.forEach(line=>{
+    // Crammed multiple "<num> Name" players on one line: 2+ distinct number-then-letter clusters
+    // (a single legitimate two-number row like "3 12 Ohtani" only has ONE such cluster, so it's left intact).
+    const clusters = line.match(/\d+\s*[A-Za-z]/g) || [];
+    if(clusters.length >= 2){
+      line.split(/(?=\d+\s*[A-Za-z])/).map(s=>s.trim()).filter(Boolean).forEach(p=>parts.push(p));
+    } else {
+      parts.push(line);
+    }
+  });
+  const rows = [];
+  parts.forEach(part=>{
+    const m = part.match(/^#?\s*(\d{1,3})\s*[-.\)]?\s*(?:#?\s*(\d{1,3})\s*[-.\)]?\s*)?(.+)$/);
+    if(m && m[1] && m[3] && /[A-Za-z]/.test(m[3])){
+      const n1 = m[1], n2 = m[2]||null, name = m[3].trim();
+      let order=null, jersey='';
+      if(n2){
+        if(firstMeaning==='order'){ order=n1; jersey=n2; } else { jersey=n1; order=n2; }
+      } else if(firstMeaning==='order'){ order=n1; }
+      else { jersey=n1; }
+      rows.push({order, num:jersey, name});
+    } else if(/,/.test(part) && !/\d/.test(part)){
+      part.split(',').map(s=>s.trim()).filter(Boolean).forEach(nm=>rows.push({order:null, num:'', name:nm}));
+    } else if(/^[A-Za-z][A-Za-z'\-. ]*$/.test(part)){
+      rows.push({order:null, num:'', name:part});
+    }
+  });
+  return rows;
+}
+function insertBlankLineupRow(tm){
+  let insertAt = -1;
+  tm.players.forEach((p,i)=>{ if((p.group||'lineup')!=='bench') insertAt = i; });
+  tm.players.splice(insertAt+1, 0, {id:uid(), num:'', name:'', group:'lineup'});
+}
+// Rows with an explicit batting-order number are placed at that exact slot (extending the Batting
+// Order with blank rows if needed); rows with no explicit order fall through to the pre-existing
+// "fill first empty slot, then append" behavior, in their given (top-to-bottom) sequence.
+function applyImportedRows(tm, rows){
+  const explicit = rows.filter(r=>r.order);
+  const implicit = rows.filter(r=>!r.order).map(r=>({num:r.num, name:r.name}));
+  explicit.forEach(r=>{
+    const idx = Number(r.order)-1;
+    if(idx<0) return;
+    let lineupRows = tm.players.filter(p=>(p.group||'lineup')!=='bench');
+    while(lineupRows.length<=idx){
+      insertBlankLineupRow(tm);
+      lineupRows = tm.players.filter(p=>(p.group||'lineup')!=='bench');
+    }
+    const target = lineupRows[idx];
+    target.name = r.name;
+    if(r.num) target.num = r.num;
+  });
+  if(implicit.length) insertImportedIntoLineup(tm, implicit);
+}
+function syncPasteDraft(){
+  const el = document.getElementById('pasteBox');
+  if(el) state.pasteDraftText = el.value;
+}
+function setImportFirstMeaning(v){ syncPasteDraft(); state.importFirstNumberMeaning = v; render(); }
+function showPastePreview(){
+  const rows = parseImportText(document.getElementById('pasteBox').value, state.importFirstNumberMeaning);
+  const box = document.getElementById('pastePreview');
+  box.style.display = 'block';
+  box.innerHTML = rows.map(r=>`<div>⚾ ${r.order? r.order+'. ' : ''}${r.num? '#'+r.num+' ' : ''}${r.name}</div>`).join('') || '<div>No rows detected</div>';
+}
+function applyPastedRoster(){
+  const rows = parseImportText(document.getElementById('pasteBox').value, state.importFirstNumberMeaning);
+  if(!rows.length) return;
+  applyImportedRows(team(state.setupTeam), rows);
+  state.pasteDraftText = '';
+  state.pastePanelOpen = false;
+  render();
+}
+function togglePastePanel(){
+  syncPasteDraft();
+  state.pastePanelOpen = !state.pastePanelOpen;
+  render();
+}
+
+// ---- drag-to-reorder (pointer-based; mirrors the scan-crop canvas pattern of manipulating the DOM
+// directly during the drag and only calling render() once, on drop, rather than on every move) ----
+let pgDrag = null;
+function attachPreGameDragHandlers(){
+  document.querySelectorAll('[data-pg-handle]').forEach(h=>{
+    h.onpointerdown = (e)=>startPreGameDrag(e, h.closest('.pg-row'));
+  });
+}
+function startPreGameDrag(e, rowEl){
+  if(!rowEl) return;
+  e.preventDefault();
+  const rect = rowEl.getBoundingClientRect();
+  const ghost = rowEl.cloneNode(true);
+  ghost.classList.add('pg-drag-ghost');
+  ghost.style.width = rect.width+'px';
+  ghost.style.left = rect.left+'px';
+  ghost.style.top = rect.top+'px';
+  document.body.appendChild(ghost);
+  rowEl.classList.add('pg-dragging');
+  pgDrag = { rowEl, ghost, offsetY: e.clientY-rect.top, dropTarget:null, dropEmptyGroup:null };
+  document.onpointermove = onPreGameDragMove;
+  document.onpointerup = onPreGameDragEnd;
+  document.onpointercancel = onPreGameDragEnd;
+}
+function onPreGameDragMove(e){
+  if(!pgDrag) return;
+  pgDrag.ghost.style.top = (e.clientY-pgDrag.offsetY)+'px';
+  document.querySelectorAll('.pg-drop-line').forEach(l=>l.remove());
+  const hits = document.elementsFromPoint(e.clientX, e.clientY);
+  const under = hits.find(el=>el.classList && el.classList.contains('pg-row') && el!==pgDrag.rowEl);
+  pgDrag.dropTarget = null; pgDrag.dropEmptyGroup = null;
+  if(under){
+    const wrap = under.closest('.pg-row-wrap') || under;
+    const r = wrap.getBoundingClientRect();
+    const before = e.clientY < r.top + r.height/2;
+    const line = document.createElement('div');
+    line.className = 'pg-drop-line';
+    wrap.parentNode.insertBefore(line, before ? wrap : wrap.nextSibling);
+    pgDrag.dropTarget = { id: under.dataset.id, group: under.dataset.group, before };
+  } else {
+    const emptyList = hits.find(el=>el.id==='pgLineupList' || el.id==='pgBenchList');
+    if(emptyList) pgDrag.dropEmptyGroup = emptyList.id==='pgLineupList' ? 'lineup' : 'bench';
+  }
+}
+function onPreGameDragEnd(){
+  if(!pgDrag) return;
+  document.querySelectorAll('.pg-drop-line').forEach(l=>l.remove());
+  pgDrag.ghost.remove();
+  if(pgDrag.rowEl) pgDrag.rowEl.classList.remove('pg-dragging');
+  if(!pgDrag.rowEl || !document.contains(pgDrag.rowEl)){
+    // Orphaned drag (pointer sequence was cancelled, or an unrelated render happened mid-drag) —
+    // clear the stale state without touching any data, so a later unrelated tap doesn't inherit it.
+    document.onpointermove = null; document.onpointerup = null; document.onpointercancel = null;
+    pgDrag = null;
+    return;
+  }
+  const draggedId = pgDrag.rowEl.dataset.id;
+  const fromGroup = pgDrag.rowEl.dataset.group;
+  const key = state.setupTeam;
+  const tm = team(key);
+
+  if(!state.gameStarted){
+    const fromIdx = tm.players.findIndex(p=>p.id===draggedId);
+    if(fromIdx>=0){
+      const [moved] = tm.players.splice(fromIdx,1);
+      if(pgDrag.dropTarget){
+        moved.group = pgDrag.dropTarget.group;
+        let toIdx = tm.players.findIndex(p=>p.id===pgDrag.dropTarget.id);
+        if(!pgDrag.dropTarget.before) toIdx += 1;
+        tm.players.splice(toIdx, 0, moved);
+      } else if(pgDrag.dropEmptyGroup){
+        moved.group = pgDrag.dropEmptyGroup;
+        tm.players.push(moved);
+      } else {
+        tm.players.splice(fromIdx, 0, moved); // dropped somewhere invalid — put it back
+      }
+    }
+  } else {
+    // Post-game: reordering within Batting Order, promoting a Bench player into it, and dragging a
+    // Batting-Order player back to Bench are all allowed — the one guard is the player currently at
+    // the plate, who can't be pulled out from under themselves mid-at-bat (use Sub ⇄ for that, or wait
+    // for the at-bat to end).
+    const toGroup = pgDrag.dropTarget ? pgDrag.dropTarget.group : pgDrag.dropEmptyGroup;
+    if(fromGroup==='lineup' && toGroup==='bench'){
+      if(draggedId === tm.lineup[tm.battingIdx]){
+        // no-op — can't bench the player currently at bat; row snaps back on next render
+      } else {
+        pushHistory();
+        const curBatterId = tm.lineup[tm.battingIdx];
+        tm.lineup.splice(tm.lineup.indexOf(draggedId), 1);
+        tm.battingIdx = tm.lineup.indexOf(curBatterId);
+      }
+    } else if(toGroup==='lineup'){
+      pushHistory();
+      const curBatterId = tm.lineup[tm.battingIdx];
+      if(fromGroup==='lineup') tm.lineup.splice(tm.lineup.indexOf(draggedId),1);
+      else {
+        ensureStats(key, draggedId);
+        if(!tm.subHistory) tm.subHistory = {};
+        tm.subHistory[draggedId] = Object.assign({}, tm.subHistory[draggedId], { inInning: state.inning });
+      }
+      let toIdx = pgDrag.dropTarget ? tm.lineup.indexOf(pgDrag.dropTarget.id) : tm.lineup.length;
+      if(pgDrag.dropTarget && !pgDrag.dropTarget.before) toIdx += 1;
+      if(toIdx<0) toIdx = tm.lineup.length;
+      tm.lineup.splice(toIdx, 0, draggedId);
+      tm.battingIdx = tm.lineup.indexOf(curBatterId);
+    }
+  }
+  document.onpointermove = null; document.onpointerup = null; document.onpointercancel = null;
+  pgDrag = null;
+  render();
+}
+// ---------------------------------------------------------------------------------------------
+// ---------------- ROSTER PHOTO SCAN (Tesseract.js OCR, client-side only) ----------------
+// Parses raw OCR text into candidate {num, name, flagged} rows. Each non-blank line is checked
+// for a leading number token (allowing #, ., ), or - separators) followed by a name. A line with
+// no leading number still comes through as a name-only row (flagged, so the user fills in the
+// number) rather than being silently dropped — OCR frequently loses a faint jersey number even
+// when the name reads fine. `flagged` marks anything worth a second look: a non-purely-numeric
+// number token (common misread, e.g. "l3" for "13"), or a missing number.
+function triggerScan(){ syncPasteDraft(); document.getElementById('scanCameraInput').click(); }
+function triggerFromImage(){ syncPasteDraft(); document.getElementById('scanLibraryInput').click(); }
+
+// Detects HEIC/HEIF (common default on iPhone camera) and converts to JPEG client-side via
+// heic2any before anything else touches the file — canvas/Tesseract can't decode HEIC directly
+// on most browsers (only Safari has native support), so without this step iPhone photos would
+// silently fail everywhere else.
+function handleScanFile(input){
+  const file = input.files[0];
+  const teamKey = state.setupTeam;
+  input.value = ''; // allow re-selecting the same file next time
+  if(!file) return;
+  const isHeic = /\.hei[cf]$/i.test(file.name) || /heic|heif/i.test(file.type);
+  const proceedWithBlob = (blob)=>{
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        state.sheet = {
+          outcome:'SCAN_CROP', teamKey,
+          originalImage: img, rawImage: img,
+          tiltDeg: 0, cropRect: null, dragStart: null
+        };
+        render();
+      };
+      img.onerror = ()=>{ alert(t('scan_fail')); };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(blob);
+  };
+  if(isHeic){
+    if(typeof heic2any === 'undefined'){ alert(t('scan_fail')); return; }
+    heic2any({ blob:file, toType:'image/jpeg', quality:0.92 }).then(proceedWithBlob).catch(()=>{ alert(t('scan_fail')); });
+  } else {
+    proceedWithBlob(file);
+  }
+}
+
+// ---- Crop/rotate sheet (SCAN_CROP): direct canvas manipulation, not routed through the app's
+// full render() during drags/rotation — re-rendering the whole app on every pointermove would
+// destroy/recreate the canvas element mid-drag. Only entering/leaving the sheet, and discrete
+// rotate/crop/reset actions, go through render(); dragging and the tilt slider redraw the canvas
+// directly (same pattern the roster's oninput fields already use for high-frequency updates). ----
+function scanCropDisplayScale(){
+  const s = state.sheet;
+  const maxW = Math.min(360, window.innerWidth - 60);
+  return Math.min(1, maxW / s.rawImage.width);
+}
+function drawScanCropCanvas(){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
+  const canvas = document.getElementById('scanCropCanvas'); if(!canvas) return;
+  const scale = scanCropDisplayScale();
+  canvas.width = s.rawImage.width * scale;
+  canvas.height = s.rawImage.height * scale;
+  const ctx = canvas.getContext('2d');
+  const tilt = (s.tiltDeg||0) * Math.PI/180;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.translate(canvas.width/2, canvas.height/2);
+  ctx.rotate(tilt);
+  ctx.drawImage(s.rawImage, -canvas.width/2, -canvas.height/2, canvas.width, canvas.height);
+  ctx.restore();
+  if(s.cropRect){
+    ctx.strokeStyle = '#FFB800'; ctx.lineWidth = 2; ctx.setLineDash([6,4]);
+    ctx.strokeRect(s.cropRect.x, s.cropRect.y, s.cropRect.w, s.cropRect.h);
+    ctx.fillStyle = 'rgba(255,184,0,0.12)';
+    ctx.fillRect(s.cropRect.x, s.cropRect.y, s.cropRect.w, s.cropRect.h);
+  }
+}
+function scanCropCanvasPoint(e){
+  const canvas = document.getElementById('scanCropCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+  return { x: cx * canvas.width/rect.width, y: cy * canvas.height/rect.height };
+}
+function scanCropDragStart(e){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
+  e.preventDefault();
+  s.dragStart = scanCropCanvasPoint(e);
+  s.cropRect = { x:s.dragStart.x, y:s.dragStart.y, w:0, h:0 };
+}
+function scanCropDragMove(e){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP' || !s.dragStart) return;
+  e.preventDefault();
+  const p = scanCropCanvasPoint(e);
+  s.cropRect = {
+    x: Math.min(s.dragStart.x, p.x), y: Math.min(s.dragStart.y, p.y),
+    w: Math.abs(p.x-s.dragStart.x), h: Math.abs(p.y-s.dragStart.y)
+  };
+  drawScanCropCanvas();
+}
+function scanCropDragEnd(){ const s = state.sheet; if(s) s.dragStart = null; }
+function scanCropTiltChange(val){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
+  s.tiltDeg = Number(val);
+  const lbl = document.getElementById('scanTiltVal'); if(lbl) lbl.textContent = val;
+  drawScanCropCanvas();
+}
+function initScanCropCanvas(){
+  const wrap = document.getElementById('scanCropWrap'); if(!wrap) return;
+  drawScanCropCanvas();
+  ['mousedown','touchstart'].forEach(ev=>wrap.addEventListener(ev, scanCropDragStart, {passive:false}));
+  ['mousemove','touchmove'].forEach(ev=>wrap.addEventListener(ev, scanCropDragMove, {passive:false}));
+  ['mouseup','touchend','mouseleave'].forEach(ev=>wrap.addEventListener(ev, scanCropDragEnd));
+}
+function scanCropRotate90(dir){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
+  const w = s.rawImage.width, h = s.rawImage.height;
+  const c = document.createElement('canvas');
+  c.width = h; c.height = w;
+  const ctx = c.getContext('2d');
+  ctx.translate(c.width/2, c.height/2);
+  ctx.rotate(dir * Math.PI/2);
+  ctx.drawImage(s.rawImage, -w/2, -h/2);
+  const img = new Image();
+  img.onload = ()=>{ s.rawImage = img; s.cropRect = null; s.tiltDeg = 0; render(); };
+  img.src = c.toDataURL('image/png');
+}
+function scanCropApplyCrop(){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP' || !s.cropRect || s.cropRect.w<4 || s.cropRect.h<4) return;
+  const canvas = document.getElementById('scanCropCanvas'); // already has current tilt baked in
+  const out = document.createElement('canvas');
+  out.width = s.cropRect.w; out.height = s.cropRect.h;
+  out.getContext('2d').drawImage(canvas, s.cropRect.x, s.cropRect.y, s.cropRect.w, s.cropRect.h, 0, 0, s.cropRect.w, s.cropRect.h);
+  const img = new Image();
+  img.onload = ()=>{ s.rawImage = img; s.cropRect = null; s.tiltDeg = 0; render(); };
+  img.src = out.toDataURL('image/png');
+}
+function scanCropReset(){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
+  s.rawImage = s.originalImage; s.cropRect = null; s.tiltDeg = 0;
+  render();
+}
+function scanCropCancel(){ state.sheet = null; render(); }
+// Continue straight to OCR on the current working image (with tilt baked in even if the user
+// never drew a crop box) — lets a well-framed photo skip cropping entirely.
+function scanCropConfirm(){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
+  const canvas = document.getElementById('scanCropCanvas'); // current tilt already baked in
+  const teamKey = s.teamKey;
+  runOCRAndReview(canvas.toDataURL('image/png'), teamKey);
+}
+
+// Fixed preprocessing (grayscale + contrast boost + 2x upscale) and PSM 6 (uniform block of
+// text) — settings validated against real roster photos in a standalone test harness before
+// being hard-coded here; not exposed as user-facing controls in the real app.
+function preprocessForOCR(dataUrl){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const scale = 2;
+      const c = document.createElement('canvas');
+      c.width = img.width*scale; c.height = img.height*scale;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      const imgData = ctx.getImageData(0,0,c.width,c.height);
+      const d = imgData.data;
+      const contrastFactor = 1.6, intercept = 128*(1-contrastFactor);
+      for(let i=0;i<d.length;i+=4){
+        const v = 0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+        const cv = Math.max(0,Math.min(255, v*contrastFactor+intercept));
+        d[i]=d[i+1]=d[i+2]=cv;
+      }
+      ctx.putImageData(imgData,0,0);
+      resolve(c.toDataURL('image/png'));
+    };
+    img.src = dataUrl;
+  });
+}
+// OCR text is dropped into the shared paste textarea/panel — same toggle, same Preview/Add flow as
+// manual paste — rather than its own structured review UI, so all three import sources (paste, image,
+// scan) go through one review surface.
+function runOCRAndReview(dataUrl, teamKey){
+  state.sheet = { outcome:'SCAN_LOADING' };
+  render();
+  if(typeof Tesseract === 'undefined'){ state.sheet = null; render(); alert(t('scan_fail')); return; }
+  preprocessForOCR(dataUrl).then(processedUrl=>{
+    return Tesseract.recognize(processedUrl, 'eng', {}, { tessedit_pageseg_mode: '6' });
+  }).then(({data:{text}})=>{
+    state.sheet = null;
+    state.setupTeam = teamKey;
+    state.pasteDraftText = (text||'').trim();
+    state.pastePanelOpen = true;
+    render();
+  }).catch(()=>{
+    state.sheet = null; render();
+    alert(t('scan_fail'));
+  });
 }
 function addToLineup(key, id){
   pushHistory();
   ensureStats(key,id);
   const t = team(key);
   if(!t.lineup.includes(id)) t.lineup.push(id);
-  render();
-}
-// Rows are displayed in "lineup order, then bench" once the game has started (see getDisplayOrder),
-// so batting-order edits and roster edits are the same list. movePlayer takes a position in that
-// displayed list (not a raw players-array index) and reorders within whichever group (lineup or
-// bench) the row belongs to — arrows never cross the lineup/bench boundary; use Sub / Add to Lineup
-// for that. Pre-game there's only one group (the whole roster), matching the old behavior exactly.
-function getDisplayOrder(key){
-  const tm = team(key);
-  if(!state.gameStarted) return tm.players.map((_,i)=>i);
-  const idxOfId = id => tm.players.findIndex(p=>p.id===id);
-  const lineupIdxs = tm.lineup.map(idxOfId).filter(i=>i>=0);
-  const lineupIdSet = new Set(tm.lineup);
-  const benchIdxs = tm.players.map((_,i)=>i).filter(i=>!lineupIdSet.has(tm.players[i].id));
-  return [...lineupIdxs, ...benchIdxs];
-}
-function movePlayer(displayPos, dir){
-  const key = state.setupTeam;
-  const tm = team(key);
-  const order = getDisplayOrder(key);
-  const targetPos = displayPos+dir;
-  if(targetPos<0 || targetPos>=order.length) return;
-  const groupSize = state.gameStarted ? tm.lineup.length : order.length;
-  const bothLineup = displayPos<groupSize && targetPos<groupSize;
-  const bothBench = displayPos>=groupSize && targetPos>=groupSize;
-  if(!bothLineup && !bothBench) return; // no crossing between lineup/bench via arrows
-  if(state.gameStarted && bothLineup){
-    pushHistory();
-    [tm.lineup[displayPos], tm.lineup[targetPos]] = [tm.lineup[targetPos], tm.lineup[displayPos]];
-  } else {
-    const ai = order[displayPos], bi = order[targetPos];
-    [tm.players[ai], tm.players[bi]] = [tm.players[bi], tm.players[ai]];
-  }
   render();
 }
 function openSubSheet(key, lineupIndex){ state.sheet = { outcome:'SUB_PLAYER', teamKey:key, lineupIndex }; render(); }
@@ -1564,8 +2116,15 @@ function fieldFielderFontSize(renderW){ return 10 * FIELD_VIEWBOX_W / renderW; }
 function fieldRunnerFontSize(renderW){
   return renderW===FIELD_RENDER_W_LIVE ? (14 * FIELD_VIEWBOX_W / renderW) : (fieldFielderFontSize(renderW) * 1.15);
 }
-// Runner-jersey label position: directly above each base.
-function fieldLabelPos(baseNum){ const b=FIELD_BASE[baseNum]; return {x:b.x, y:b.y-95}; }
+// Runner-jersey label position for the sheet-preview diamond (plain text, not a pill) — unchanged,
+// original fixed offset. Kept separate from the Live-tab pill's own position function below, since that
+// one needs a different (larger) clearance to sit above the enlarged occupied-base square; sharing one
+// function between the two previously pushed this preview label up into the fielder-position markers.
+function fieldLabelPos(baseNum){
+  const b = FIELD_BASE[baseNum];
+  const nudge = baseNum===2 ? 10 : 0; // tiny downward nudge for 2nd base only
+  return {x:b.x, y:b.y-95+nudge};
+}
 // Fielder-position marker: circle + number, single shared style for live diamond and both sheet types.
 function fieldFielderMarker(n, renderW){
   const f = FIELD_FIELDERS[n];
@@ -1652,64 +2211,93 @@ function fieldBaseRect(n, isOccupied, onclickAttr){
 // yellow+enlarged when occupied) replaces them, drawn in a second identically-transformed group layered
 // on top. viewBox top extended (830→740, height 1280→1370) beyond the raw V10 crop so the runner-jersey
 // label above 2nd base has room and doesn't clip against the top edge.
+// Original crop, unchanged — confirmed correctly sized. Pills that would otherwise overrun the left/
+// right edge (1st/3rd base) are allowed to spill outside this viewBox via the .diamond-inner svg's
+// overflow:visible rather than by widening the viewBox itself, which only ever trades edge-clipping for
+// a smaller diamond on width-constrained screens. These three are still coupled if ever changed:
+// viewBox string, its width scalar, and the CSS render width in .diamond-inner.
 const FIELD_VIEWBOX_COMPACT = "770 740 1592 1370";
 const FIELD_VIEWBOX_W_COMPACT = 1592;
 const FIELD_RENDER_W_COMPACT = 318; // matches .diamond-inner width
-function fieldRunnerFontSizeCompact(){ return 14 * FIELD_VIEWBOX_W_COMPACT / FIELD_RENDER_W_COMPACT; }
-// Pitcher-on-mound label: pitch count sits above the white rubber (plain outlined text, same style as
-// the runner-jersey labels), jersey number + name sit below the rubber together in one semi-transparent
-// pill (bold number, regular name) whose width grows with the combined text length (same fill/stroke as
-// the fielder-position markers elsewhere in this file, so it reads as "one visual language" rather than
-// a new component). Font sizes are on-screen-px targets scaled the same way as fieldRunnerFontSizeCompact.
-function fieldPitcherCountFontSize(){ return 11 * FIELD_VIEWBOX_W_COMPACT / FIELD_RENDER_W_COMPACT; }
-function fieldPitcherNumFontSize(){ return 13 * FIELD_VIEWBOX_W_COMPACT / FIELD_RENDER_W_COMPACT; }   // bold number inside the pill
-function fieldPitcherNameFontSize(){ return 11 * FIELD_VIEWBOX_W_COMPACT / FIELD_RENDER_W_COMPACT; }  // regular name inside the pill
-// Fixed clearance (in viewBox units) kept between the rubber's edges and each label, independent of
-// the other label's font size — so resizing one line never pushes the other around.
+// Every pill (runner jersey, pitcher, pitch count) shares one flat 12px on-screen font size.
+function fieldPillFontSize(){ return 12 * FIELD_VIEWBOX_W_COMPACT / FIELD_RENDER_W_COMPACT; }
+// Longest name shown in full inside a pill before truncating with an ellipsis — keeps room for the
+// jersey-number suffix on a long name without the pill growing unreasonably wide.
+const PILL_MAX_NAME_CHARS = 11;
+// Shared pill builder: "<order>. <name> #<jersey>" (order/jersey each optional) in one pill — bold order
+// number, regular name, regular jersey suffix (no bold, per review). style 'amber' = runner (base-
+// occupancy tint kept), 'neutral' = pitcher/pitch-count (white, matches the fielder-position markers).
+function fieldPillColors(style){
+  return style==='amber'
+    ? { fill:'rgba(255,248,230,0.85)', stroke:'#8a6100', text:'#8a6100' }
+    : { fill:'rgba(255,255,255,0.7)', stroke:'#8C8570', text:'#1C2621' };
+}
+function fieldPillMarkup(cx, cy, order, name, jerseyNum, style){
+  const fs = fieldPillFontSize();
+  const pillH = fs*1.35; // reduced internal vertical padding
+  const orderPart = order? `${order}. ` : '';
+  let displayName = name||'';
+  if(displayName.length>PILL_MAX_NAME_CHARS) displayName = displayName.slice(0,PILL_MAX_NAME_CHARS-1)+'…';
+  const jerseyPart = (jerseyNum && jerseyNum!=='-') ? ` #${jerseyNum}` : '';
+  // Trailing +fs*2 term is ~1 character width of padding on each side of the text.
+  const pillW = Math.max(fs*2.6, (orderPart.length+displayName.length+jerseyPart.length)*fs*0.56 + fs*2);
+  const c = fieldPillColors(style);
+  return `<rect x="${cx-pillW/2}" y="${cy-pillH/2}" width="${pillW}" height="${pillH}" rx="${pillH/2}" fill="${c.fill}" stroke="${c.stroke}" stroke-width="${fs*0.09}"></rect>
+    <text x="${cx}" y="${cy}" font-family="ui-monospace,monospace" text-anchor="middle" dominant-baseline="central"><tspan font-size="${fs}" font-weight="900" fill="${c.text}">${orderPart}</tspan><tspan font-size="${fs}" font-weight="500" fill="${c.text}">${displayName}</tspan><tspan font-size="${fs}" font-weight="500" fill="${c.text}">${jerseyPart}</tspan></text>`;
+}
+// Live-tab runner pill position: above each base, cleared far enough to sit above that base's ENLARGED
+// (occupied) square — the pill is only ever shown while the base is occupied, so this clearance is
+// always in play whenever the pill renders.
+const FIELD_ENLARGED_BASE_HALF_DIAGONAL = 53.725*2*Math.SQRT1_2; // ~76 viewBox units
+function fieldPillLabelPos(baseNum){
+  const b = FIELD_BASE[baseNum];
+  const pillH = fieldPillFontSize()*1.35;
+  const offset = FIELD_ENLARGED_BASE_HALF_DIAGONAL + 8 + pillH/2;
+  return {x:b.x, y:b.y-offset};
+}
+// Simple single-line pill (no order/name/jersey structure) — used for the pitch-count pill.
+function fieldSimplePill(cx, cy, text, style){
+  const fs = fieldPillFontSize();
+  const pillH = fs*1.35;
+  const pillW = Math.max(fs*2.6, text.length*fs*0.58 + fs*2);
+  const c = fieldPillColors(style);
+  return `<rect x="${cx-pillW/2}" y="${cy-pillH/2}" width="${pillW}" height="${pillH}" rx="${pillH/2}" fill="${c.fill}" stroke="${c.stroke}" stroke-width="${fs*0.09}"></rect>
+    <text x="${cx}" y="${cy}" font-family="ui-monospace,monospace" font-size="${fs}" font-weight="800" fill="${c.text}" text-anchor="middle" dominant-baseline="central">${text}</text>`;
+}
+// Fixed clearance (in viewBox units) kept between the rubber's edges and each pill.
 const FIELD_PITCHER_LABEL_GAP = 10;
-// Builds the pitch-count + number/name-pill markup for the mound. Returns '' when there's no pitcher to
-// show (pitching not tracked, or no pitcher set yet) so callers can splice it in unconditionally.
+// Builds the pitch-count pill + batting-order/name/jersey pill for the mound. Returns '' when there's
+// no pitcher to show (pitching not tracked, or no pitcher set yet) so callers can splice it in
+// unconditionally.
 function fieldPitcherLabel(){
   if(!state.trackPitching) return '';
   const fKey = fieldingKey();
   const id = team(fKey).currentPitcherId;
   if(!id) return '';
-  const num = playerNum(fKey, id);
-  const name = playerName(fKey, id);
-  const countFs = fieldPitcherCountFontSize();
-  const numFs = fieldPitcherNumFontSize();
-  const nameFs = fieldPitcherNameFontSize();
   const cx = FIELD_MOUND.x;
+  const fs = fieldPillFontSize();
+  const pillH = fs*1.35;
   // Rubber (drawn at pre-translate y=1369, height=24) spans mound.y-11.28 to mound.y+12.72.
   const rubberTop = FIELD_MOUND.y - 11.28;
   const rubberBottom = FIELD_MOUND.y + 12.72;
-  // Pill (bold #num + regular name): vertical center placed so its bottom edge clears the rubber's top
-  // edge by a fixed gap — computed from the pill's own (taller) line height alone, so it always stays
-  // above the strip regardless of the pitch-count text's size below it.
-  const pillH = Math.max(numFs, nameFs)*1.9;
-  const pillCy = rubberTop - FIELD_PITCHER_LABEL_GAP - pillH/2;
-  const numPart = `#${num} `;
-  const pillW = Math.max(numFs*3, numPart.length*numFs*0.62 + name.length*nameFs*0.62 + nameFs*1.6);
-  const pill = `<rect x="${cx-pillW/2}" y="${pillCy-pillH/2}" width="${pillW}" height="${pillH}" rx="${pillH/2}" fill="rgba(255,255,255,0.75)" stroke="#8C8570" stroke-width="${nameFs*0.09}"></rect>
-    <text x="${cx}" y="${pillCy}" font-family="ui-monospace,monospace" text-anchor="middle" dominant-baseline="central"><tspan font-size="${numFs}" font-weight="900" fill="#1C2621">${numPart}</tspan><tspan font-size="${nameFs}" font-weight="500" fill="#1C2621">${name}</tspan></text>`;
-  // Pitch count: vertical center placed so its full glyph height clears the rubber's bottom edge by the
-  // same fixed gap — computed from countFs alone, so it always stays below the strip regardless of the
-  // pill's size above it. Pulls the same running total shown in the Pitching card (accumulated pitches
-  // plus the in-progress count/fouls not yet committed to a play).
-  const countY = rubberBottom + FIELD_PITCHER_LABEL_GAP + countFs*0.5;
+  const countCy = rubberTop - FIELD_PITCHER_LABEL_GAP - pillH/2;
   const pitchCount = (ensurePitch(fKey, id).pitches||0) + state.count.balls + state.count.strikes + (state.count.fouls||0);
-  const countText = `<text x="${cx}" y="${countY}" font-family="ui-monospace,monospace" font-size="${countFs}" font-weight="800" fill="#1C2621" stroke="#F7F4EC" stroke-width="${countFs*0.15}" paint-order="stroke fill" text-anchor="middle" dominant-baseline="central">PC: ${pitchCount}</text>`;
-  // Invisible tap target sized to cover the mound circle plus both labels' own bounding boxes (the pill
-  // now sits above the mound, the pitch-count text below it), so either end stays fully tappable even
-  // when a long name pushes the pill wider or the mound's default radius wouldn't otherwise reach a label.
-  const tapHalfW = Math.max(94, pillW/2);
-  const tapTop = Math.min(FIELD_MOUND.y - 94, pillCy - pillH/2);
-  const tapBottom = Math.max(FIELD_MOUND.y + 94, countY + countFs*0.5);
+  const countPill = fieldSimplePill(cx, countCy, 'PC: '+pitchCount, 'neutral');
+  const pillCy = rubberBottom + FIELD_PITCHER_LABEL_GAP + pillH/2;
+  const namePill = fieldPillMarkup(cx, pillCy, battingOrderNum(fKey,id), playerName(fKey,id), playerNum(fKey,id), 'neutral');
+  // Invisible tap target sized to cover the mound circle plus both pills' own bounding boxes, so either
+  // end stays fully tappable even when a long name pushes a pill wider or the mound's default radius
+  // wouldn't otherwise reach a pill.
+  const topY = countCy - pillH/2;
+  const bottomY = pillCy + pillH/2;
+  const tapHalfW = 110;
+  const tapTop = Math.min(FIELD_MOUND.y - 94, topY);
+  const tapBottom = Math.max(FIELD_MOUND.y + 94, bottomY);
   const tapTarget = `<rect x="${cx-tapHalfW}" y="${tapTop}" width="${tapHalfW*2}" height="${tapBottom-tapTop}" fill="transparent" pointer-events="all"></rect>`;
-  // Everything wrapped in one clickable group: without this, a tap that lands on the visible count text or
-  // pill (rather than the gaps between them) would hit that element instead of the invisible tap rect
-  // beneath it, and register nothing — the exact "long name is hard to tap" symptom this fixes.
-  return `<g style="cursor:pointer;" onclick="openPitcherSheet()">${tapTarget}${countText}${pill}</g>`;
+  // Everything wrapped in one clickable group: without this, a tap that lands on a visible pill (rather
+  // than the gap between them) would hit that element instead of the invisible tap rect beneath it, and
+  // register nothing — the exact "long name is hard to tap" symptom this fixes.
+  return `<g style="cursor:pointer;" onclick="openPitcherSheet()">${countPill}${namePill}${tapTarget}</g>`;
 }
 // Static infield background art for the Live-tab compact diamond — verbatim from the V10 asset (dirt
 // fan, grass-stripe clip group, mound, rubber, home plate), minus its 3 static base squares.
@@ -1731,7 +2319,9 @@ function fieldInfieldBackgroundSVG(){
         <stop offset="82%" stop-color="#FFFFFF" stop-opacity="0"/>
         <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.22"/>
       </linearGradient>
+      <clipPath id="compactFieldClip"><rect x="770" y="740" width="1592" height="1370"/></clipPath>
     </defs>
+    <g clip-path="url(#compactFieldClip)">
     <g transform="translate(0 55)">
       <path d="M 1563.28 691.87 C 1567.13 691.875 1570.98 691.87 1574.83 691.863 C 1586.69 691.86 1598.53 691.965 1610.38 692.449 C 1611.34 692.488 1612.3 692.528 1613.3 692.568 C 1619.83 692.869 1626.21 693.563 1632.68 694.473 C 1638.08 695.185 1643.51 695.498 1648.94 695.875 C 1671.89 697.558 1694.54 700.582 1717.19 704.562 C 1718.03 704.71 1718.87 704.858 1719.73 705.01 C 1735.83 707.855 1751.71 711.332 1767.56 715.312 C 1768.35 715.51 1769.14 715.707 1769.95 715.91 C 1786.47 720.056 1802.89 724.425 1819 730 C 1820.42 730.471 1821.85 730.941 1823.27 731.41 C 1827.84 732.931 1832.36 734.571 1836.88 736.25 C 1838.53 736.863 1840.19 737.477 1841.84 738.09 C 1842.69 738.403 1843.53 738.716 1844.4 739.039 C 1847.03 740.01 1849.65 740.977 1852.28 741.941 C 1853.13 742.255 1853.99 742.569 1854.87 742.892 C 1856.5 743.492 1858.13 744.091 1859.77 744.69 C 1865.77 746.897 1871.6 749.25 1877.38 752 C 1883.04 754.678 1888.75 757.198 1894.51 759.659 C 1903.37 763.45 1912.01 767.395 1920.44 772.059 C 1924.98 774.565 1929.63 776.842 1934.29 779.124 C 1939.28 781.59 1944.14 784.272 1949 787 C 1950.79 787.994 1952.59 788.987 1954.38 789.98 C 1964.26 795.482 1973.95 801.075 1983.27 807.477 C 1987.59 810.437 1992.05 813.172 1996.5 815.937 C 2004.36 820.848 2011.83 826.126 2019.23 831.688 C 2022.14 833.845 2025.1 835.916 2028.06 838 C 2034.71 842.711 2041.11 847.721 2047.48 852.798 C 2049.49 854.389 2051.53 855.944 2053.56 857.5 C 2061.57 863.711 2069.22 870.389 2076.81 877.094 C 2079.08 879.072 2081.39 881.012 2083.69 882.954 C 2089.51 887.889 2095.19 892.956 2100.75 898.191 C 2101.47 898.876 2102.2 899.562 2102.95 900.267 C 2111.15 908.036 2119.16 916.004 2127.13 924.003 C 2129.65 926.529 2132.18 929.05 2134.71 931.57 C 2136.34 933.203 2137.97 934.836 2139.6 936.469 C 2140.34 937.208 2141.09 937.948 2141.85 938.71 C 2145.89 942.774 2149.78 946.928 2153.51 951.276 C 2155.58 953.673 2157.73 955.989 2159.88 958.312 C 2163.94 962.773 2167.8 967.356 2171.59 972.055 C 2173.83 974.793 2176.13 977.474 2178.45 980.148 C 2183.48 985.946 2188.22 991.852 2192.77 998.047 C 2195.94 1002.24 2199.32 1006.22 2202.74 1010.21 C 2205.03 1013.04 2206.99 1015.96 2209 1019 C 2210.82 1021.48 2212.7 1023.93 2214.56 1026.38 C 2220.22 1033.86 2225.57 1041.53 2230.84 1049.3 C 2232.34 1051.49 2233.89 1053.65 2235.44 1055.81 C 2239.38 1061.41 2242.97 1067.25 2246.6 1073.05 C 2249.13 1077.08 2251.68 1081.04 2254.5 1084.88 C 2258.69 1090.69 2262.08 1097 2265.56 1103.25 C 2267.92 1107.46 2270.34 1111.57 2273.06 1115.56 C 2276.08 1120.01 2278.56 1124.65 2281 1129.44 C 2284.87 1136.92 2284.87 1136.92 2289.13 1144.19 C 2291.86 1148.63 2294.18 1153.25 2296.48 1157.93 C 2299.26 1163.59 2302.17 1169.17 2305.1 1174.75 C 2311.52 1186.98 2317.59 1199.29 2323 1212 C 2323.41 1212.94 2323.82 1213.88 2324.23 1214.85 C 2325 1217 2326.32 1220 2327 1220 C 2329.97 1227.26 2332.94 1234.52 2336 1242 C 2336.018 1242 2336.036 1242 2336.054 1242 L 2340.958 1255.816 C 2340.955 1255.834 2340.953 1255.852 2340.95 1255.87 C 2341.165 1256.506 2341.389 1257.11 2341.624 1257.692 C 2342.528 1259.926 2343.604 1261.834 2345 1264 C 2346.64 1268.11 2348.07 1272.3 2349.5 1276.49 C 2350.19 1278.5 2350.89 1280.5 2351.59 1282.5 C 2352.03 1283.78 2352.48 1285.06 2352.92 1286.34 C 2353.32 1287.5 2353.72 1288.66 2354.13 1289.85 C 2354.93 1292.76 2355.19 1295.01 2355 1298 C 2354.34 1298 1700.18 1963.82 1699 1965 C 1699.43 1969.18 1701 1973.06 1702.38 1977 C 1713.04 2008.24 1713.53 2049.9 1698.91 2080.26 C 1698.61 2080.83 1696.38 2085.265 1696.29 2085.955 C 1687.195 2111.855 1660.88 2133.39 1638.98 2146.86 C 1627.95 2153.13 1601.57 2161.72 1600.32 2162.1 C 1566.54 2172.06 1530.08 2165.18 1499.41 2148.9 C 1495.08 2146.49 1485.24 2139.77 1484.33 2139.13 C 1475.18 2132.64 1459.13 2115.98 1458.67 2115.46 C 1450.24 2105.64 1436.68 2080 1436 2080 C 1431.23 2069.29 1426.76 2045.6 1426.64 2044.88 C 1422.72 2021.33 1424.4 1993.35 1434.21 1971.27 C 1435.18 1968.48 1435.09 1967.73 1434 1965 C 1432.25 1963.01 785.398 1306.01 783.59 1304.24 C 782.746 1303.45 782.746 1303.45 781.886 1302.65 C 779.105 1299.89 778.041 1298.35 777.577 1294.41 C 777.933 1291.54 778.351 1288.94 779.172 1286.18 C 779.422 1285.32 779.673 1284.46 779.931 1283.58 C 780.201 1282.68 780.472 1281.79 780.75 1280.88 C 781.022 1279.95 781.294 1279.03 781.575 1278.08 C 782.374 1275.38 783.186 1272.69 784 1270 C 784.419 1268.59 784.837 1267.18 785.254 1265.77 C 787.843 1257.16 789.007 1255.652 789.011 1255.487 C 789.011 1255.487 794.948 1240.978 795 1241.001 C 795.351 1239.741 795.701 1238.481 796.063 1237.191 C 800.232 1223.401 805.667 1210.191 811.676 1197.121 C 814.08 1191.871 816.322 1186.571 818.563 1181.251 C 821.458 1174.421 824.514 1167.731 827.897 1161.131 C 831.323 1154.441 834.508 1147.641 837.676 1140.831 C 838.079 1139.971 838.483 1139.111 838.898 1138.231 C 839.435 1137.081 839.435 1137.081 839.982 1135.901 C 841 1134.001 841 1134.001 843 1132.001 C 843.714 1130.341 844.424 1128.691 845.112 1127.021 C 846.721 1123.361 848.724 1119.921 850.688 1116.441 C 851.13 1115.651 851.572 1114.861 852.027 1114.051 C 853.347 1111.701 854.673 1109.351 856 1107.001 C 856.363 1106.361 856.726 1105.711 857.101 1105.051 C 862.238 1095.931 867.557 1086.931 873 1078.001 C 873.357 1077.411 873.714 1076.821 874.083 1076.221 C 890.103 1049.891 907.608 1024.221 926.524 999.906 C 927.911 998.116 929.283 996.318 930.648 994.513 C 935.683 987.871 940.926 981.455 946.344 975.126 C 948.802 972.25 951.187 969.32 953.563 966.376 C 957.442 961.609 961.519 957.059 965.68 952.536 C 967.573 950.468 969.423 948.377 971.25 946.251 C 981.434 934.568 992.317 923.52 1003.29 912.582 C 1005.4 910.478 1007.5 908.369 1009.61 906.259 C 1010.97 904.891 1012.34 903.524 1013.71 902.157 C 1014.33 901.54 1014.94 900.924 1015.57 900.288 C 1019.34 896.547 1023.22 892.994 1027.23 889.53 C 1029.64 887.447 1031.97 885.286 1034.31 883.126 C 1038.8 879.032 1043.41 875.146 1048.14 871.333 C 1050.64 869.296 1053.09 867.218 1055.53 865.116 C 1068.73 853.788 1082.8 843.585 1096.94 833.48 C 1098.79 832.149 1100.63 830.806 1102.47 829.454 C 1112.97 821.772 1123.98 814.894 1135 808.001 C 1135.68 807.575 1136.36 807.149 1137.06 806.709 C 1144.62 801.988 1152.28 797.453 1160 793.001 C 1161.09 792.363 1162.18 791.725 1163.3 791.067 C 1170.17 787.076 1177.12 783.369 1184.25 779.861 C 1188.04 777.996 1191.76 776.065 1195.44 774.001 C 1209.3 766.361 1224.02 760.287 1238.55 754.055 C 1240.49 753.222 1242.42 752.38 1244.36 751.536 C 1262.77 743.635 1282 737.502 1300.95 731.042 C 1302.75 730.426 1304.56 729.806 1306.36 729.177 C 1313.18 726.822 1320.15 725.023 1327.13 723.188 C 1328.47 722.833 1329.82 722.478 1331.17 722.122 C 1333.2 721.586 1335.24 721.049 1337.28 720.514 C 1341.14 719.498 1345 718.457 1348.85 717.392 C 1371.3 711.238 1394.37 706.543 1417.46 703.606 C 1420.71 703.194 1423.91 702.678 1427.13 702.114 C 1437.02 700.442 1446.99 699.25 1456.94 698.001 C 1458.01 697.867 1459.07 697.733 1460.17 697.594 C 1477.1 695.484 1493.95 693.743 1511 693.001 C 1511.86 692.96 1512.73 692.92 1513.62 692.878 C 1530.17 692.108 1546.7 691.843 1563.28 691.871 L 1563.28 691.87 Z" fill="url(#dirtGrad)" />
       <path id="grassShape" d="M 0 0 C 0.804 1.268 0.804 1.268 1.625 2.563 C 7.858 12.183 19.424 18.429 30.313 21.438 C 47.351 24.261 62.825 21.03 77 11 C 80.868 7.654 84.162 4.257 87 0 C 88.813 0.188 88.813 0.188 91 1 C 92.026 2.651 538.531 450.379 541.875 453.375 C 555.899 465.983 555.899 465.983 559 473 C 558.576 473.415 558.152 473.83 557.715 474.258 C 547.414 485.079 542.51 498.534 542.498 513.305 C 542.871 528.096 548.522 541.522 559 552 C 558.672 555.365 557.323 557.053 554.983 559.396 C 554.334 560.053 108.392 1006.357 107.812 1006.937 C 106 1008 106 1008 103.481 1007.748 C 100.268 1006.779 97.176 1005.557 94.063 1004.313 C 87.332 1001.709 71.741 997.179 70.803 996.917 C 44.108 989.749 13.836 993.44 -11.148 1004.483 C -12.39 1005.012 -15.137 1006.204 -15.9 1006.54 C -18.68 1007.149 -19.578 1006.426 -22 1005 C -23.683 1003.569 -470.365 557.259 -470.943 556.682 C -472 555 -472 555 -471.768 552.912 C -470.789 550.473 -469.42 548.975 -467.625 547.063 C -464.994 544.184 -462.993 541.357 -461 538 C -460.34 538 -457.115 531.744 -456.852 530.871 C -456.571 529.924 -455.288 525.863 -454.922 524.762 C -451.716 511.68 -453.111 496.623 -459.754 484.906 C -460.938 483.028 -468.98 473 -470 473 C -470.68 471.219 -470.68 471.219 -471 469 C -469.892 467.268 -469.892 467.268 -468.119 465.496 C -467.45 464.815 -4.086 1.834 -3.484 1.232 C -2 0 -2 0 0 0 Z" fill="#3B7438" transform="translate(1526,888)" />
@@ -1753,17 +2343,15 @@ function fieldInfieldBackgroundSVG(){
       <path d="M 1002.379 1448.241 C 1002.737 1448.576 1003.09 1448.919 1003.441 1449.268 L 1002.379 1448.241 Z" fill="#F6F4EE" />
       <path d="M0 0 C21.78 0 43.56 0 66 0 C66 7.92 66 15.84 66 24 C44.22 24 22.44 24 0 24 C0 16.08 0 8.16 0 0 Z " fill="#FFFFFF" transform="translate(1535,1369)" />
       <polygon points="1533.003 1950.071 1603.083 1949.953 1604.166 1987.53 1567.187 2023.907 1532.723 1989.805" fill="#F7F5EF" stroke="#D7D1C5" stroke-width="1.5" filter="url(#baseShadow)" />
-    </g>`;
+    </g></g>`;
 }
 function renderDiamond(){
   const key = battingKey();
   const b1 = state.bases[1], b2 = state.bases[2], b3 = state.bases[3];
-  const label = (id)=> id ? '#'+playerNum(key,id) : '';
-  const runnerFs = fieldRunnerFontSizeCompact();
   const runnerLabels = [1,2,3].map(n=>{
     const id = state.bases[n]; if(!id) return '';
-    const p = fieldLabelPos(n);
-    return `<text x="${p.x}" y="${p.y}" font-family="ui-monospace,monospace" font-size="${runnerFs}" font-weight="900" fill="#FFB800" stroke="#8a6100" stroke-width="${runnerFs*0.11}" paint-order="stroke fill" text-anchor="middle">${label(id)}</text>`;
+    const p = fieldPillLabelPos(n);
+    return fieldPillMarkup(p.x, p.y, battingOrderNum(key,id), playerName(key,id), playerNum(key,id), 'amber');
   }).join('');
   return `
   <div class="diamond-wrap compact">
@@ -1799,7 +2387,7 @@ function renderGame(){
   <div class="caption">${t('live_tap_runner')}${state.trackPitching ? `<br>${t('live_tap_pitcher')}` : ''}</div>
   <div class="card merged-card">
     <div class="merged-top">
-      <div class="batter-name">#${playerNum(key,bid)} ${playerName(key,bid)}</div>
+      <div class="batter-name">${orderNameJersey(key,bid)}</div>
       <div class="count-inline">
         <span class="cl">B</span><span class="cv">${state.count.balls}</span><span class="sep">-</span><span class="cv">${state.count.strikes}</span><span class="cl">S</span>
         ${state.count.fouls? `<span class="foul-badge">${state.count.fouls} foul${state.count.fouls>1?'s':''}</span>` : ''}
@@ -1840,11 +2428,11 @@ function renderGame(){
   ${state.trackPitching?`
   <div class="card" style="margin-top:10px;">
     <div style="font-size:13px; display:flex; justify-content:space-between; align-items:center;">
-      <span>Pitching (${team(fieldingKey()).name}): <b>#${playerNum(fieldingKey(),team(fieldingKey()).currentPitcherId)} ${playerName(fieldingKey(),team(fieldingKey()).currentPitcherId)}</b></span>
+      <span>Pitching (${team(fieldingKey()).name}): <b>${orderNameJersey(fieldingKey(),team(fieldingKey()).currentPitcherId)}</b></span>
       <span class="mono" style="font-weight:800; color:var(--field-2);">${(ensurePitch(fieldingKey(),team(fieldingKey()).currentPitcherId).pitches||0) + state.count.balls + state.count.strikes + (state.count.fouls||0)} pitches</span>
     </div>
     <select onchange="switchPitcher('${fieldingKey()}', this.value)">
-      ${team(fieldingKey()).lineup.map(id=>`<option value="${id}" ${id===team(fieldingKey()).currentPitcherId?'selected':''}>#${playerNum(fieldingKey(),id)} ${playerName(fieldingKey(),id)}</option>`).join('')}
+      ${team(fieldingKey()).lineup.map(id=>`<option value="${id}" ${id===team(fieldingKey()).currentPitcherId?'selected':''}>${orderNameJersey(fieldingKey(),id)}</option>`).join('')}
     </select>
   </div>`:''}
   <div class="log card" style="margin-top:10px;">${state.log.slice(0,8).map(l=>`<div>${l}</div>`).join('') || '<div class="empty-note">No plays yet</div>'}</div>
@@ -1861,11 +2449,11 @@ function renderBox(){
       const subbedOut = tm.lineup.length>0 && !tm.lineup.includes(id);
       const subNote = subNoteBox(key, id);
       totals.AB+=st.AB; totals.R+=st.R; totals.H+=st.H; totals.RBI+=st.RBI; totals.BB+=st.BB; totals.SO+=st.SO;
-      return `<tr${subbedOut?' style="opacity:0.55;"':''}><td>#${playerNum(key,id)} ${playerName(key,id)}${subNote?` <span style="font-size:10px;color:#8C8570;">${subNote}</span>`:''}</td><td>${st.AB}</td><td>${st.R}</td><td>${st.H}</td><td>${st.d2}</td><td>${st.d3}</td><td>${st.HR}</td><td>${st.RBI}</td><td>${st.BB}</td><td>${st.SO}</td><td>${st.SB}</td><td>${avg(st)}</td><td>${obp(st)}</td><td>${slg(st)}</td><td>${ops(st)}</td></tr>`;
+      return `<tr${subbedOut?' style="opacity:0.55;"':''}><td>${orderNameJersey(key,id)}${subNote?` <span style="font-size:10px;color:#8C8570;">${subNote}</span>`:''}</td><td>${st.AB}</td><td>${st.R}</td><td>${st.H}</td><td>${st.d2}</td><td>${st.d3}</td><td>${st.HR}</td><td>${st.RBI}</td><td>${st.BB}</td><td>${st.SO}</td><td>${st.SB}</td><td>${avg(st)}</td><td>${obp(st)}</td><td>${slg(st)}</td><td>${ops(st)}</td></tr>`;
     }).join('');
     const pitchRows = Object.keys(tm.pitchStats).map(id=>{
       const ps = tm.pitchStats[id];
-      return `<tr><td>#${playerNum(key,id)} ${playerName(key,id)}</td><td>${Math.floor(ps.outs/3)}.${ps.outs%3}</td><td>${ps.pitches||0}</td><td>${ps.H}</td><td>${ps.R}</td><td>${ps.ER}</td><td>${ps.BB}</td><td>${ps.K}</td></tr>`;
+      return `<tr><td>${orderNameJersey(key,id)}</td><td>${Math.floor(ps.outs/3)}.${ps.outs%3}</td><td>${ps.pitches||0}</td><td>${ps.H}</td><td>${ps.R}</td><td>${ps.ER}</td><td>${ps.BB}</td><td>${ps.K}</td></tr>`;
     }).join('');
     return `
     <h2 class="section-title">${tm.name} — ${t('hdr_batting')}</h2>
@@ -1971,7 +2559,7 @@ function renderScorebookGrid(){
               }
             }).join('');
             const subNote = subNoteScorebook(key, pid);
-            return `<tr>${r.subbedOut?'<td class="name-cell" style="opacity:0.55;">':'<td class="name-cell">'}#${playerNum(key,pid)} ${playerName(key,pid)||''}${subNote?` <span style="font-size:10px;color:#8C8570;">${subNote}</span>`:''}</td>${cells}</tr>`;
+            return `<tr>${r.subbedOut?'<td class="name-cell" style="opacity:0.55;">':'<td class="name-cell">'}${orderNameJersey(key,pid)}${subNote?` <span style="font-size:10px;color:#8C8570;">${subNote}</span>`:''}</td>${cells}</tr>`;
           }).join('') || `<tr><td colspan="${columns.length+1}" class="empty-note">No batters yet</td></tr>`}
         </tbody>
       </table>
@@ -2230,7 +2818,7 @@ function previewBasesForSheet(s){
     });
   }
   const dest = batterDestBase(s.kind || s.outcome);
-  const batter = { name: playerName(key, currentBatterId()), num: playerNum(key, currentBatterId()) };
+  const batter = { id: currentBatterId(), name: playerName(key, currentBatterId()), num: playerNum(key, currentBatterId()) };
   if(s.outcome==='OUT_PLAY'){
     if(!s.batter.out) bases[1]=batter; // simplified model: a safe batter on these kinds always ends at 1st
   } else if(dest==='home') scored.push(batter); else if(dest) bases[dest]=batter;
@@ -2238,7 +2826,8 @@ function previewBasesForSheet(s){
 }
 function renderPreviewDiamond(s){
   const {bases, scored} = previewBasesForSheet(s);
-  const lbl = (r)=> r? '#'+r.num : '';
+  const key = battingKey();
+  const lbl = (r)=> r? String(battingOrderNum(key, r.id)||'') : '';
   const activeSeq = activeSeqFor(s);
   // Interactive fielder-tap overlay reuses the same FIELD_FIELDERS coordinates and 10px-target sizing
   // as the shared marker style (fieldFielderMarker), but keeps its own active/inactive states — a
@@ -2274,8 +2863,10 @@ function renderPreviewDiamond(s){
       ${runnerLabels}
     </svg>
   </div>
-  ${activeSeq.length ? `<div style="text-align:center;font-size:10.5px;color:#8C8570;margin:-4px 0 4px;">showing fielders for: <b style="color:var(--field-2);">${s.activeSubject==='batter'?'Batter':'runner on '+({1:'1st',2:'2nd',3:'3rd'}[s.activeSubject])}</b></div>` : ''}
-  ${scored.length? `<div class="scored-note">Scoring: ${scored.map(r=>'#'+r.num+' '+r.name).join(', ')}</div>` : ''}
+  <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; min-height:18px; margin:4px 0 2px;">
+    ${activeSeq.length ? `<div style="text-align:center;font-size:10.5px;color:#8C8570;">showing fielders for: <b style="color:var(--field-2);">${s.activeSubject==='batter'?'Batter':'runner on '+({1:'1st',2:'2nd',3:'3rd'}[s.activeSubject])}</b></div>` : ''}
+    ${scored.length? `<div class="scored-note" style="margin-top:0;">Scoring: ${scored.map(r=>orderNameJersey(key,r.id)).join(', ')}</div>` : ''}
+  </div>
   `;
 }
 
@@ -2310,6 +2901,43 @@ function renderFielderTapRow(seq, tapFnName){
 function renderSheet(){
   const s = state.sheet;
   if(!s) return '';
+  if(s.outcome==='SCAN_CROP'){
+    const hintParts = t('scan_crop_hint').split('|');
+    return `
+    <div class="sheet-backdrop"></div>
+    <div class="sheet tall">
+      <h3>${t('scan_crop_title')}</h3>
+      <div class="sub" style="font-size:11px;color:#8C8570;margin-bottom:2px;">${hintParts[0]}</div>
+      <div class="sub" style="font-size:11px;color:#8C8570;margin-bottom:10px;">${hintParts[1]||''}</div>
+      <div id="scanCropWrap" style="position:relative; touch-action:none; display:flex; justify-content:center;">
+        <canvas id="scanCropCanvas" style="max-width:100%; max-height:42vh; width:auto; height:auto; border-radius:8px; border:1.5px solid var(--line); cursor:crosshair;"></canvas>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn ghost small" onclick="scanCropRotate90(-1)">⟲ ${t('btn_rotate_left')}</button>
+        <button class="btn ghost small" onclick="scanCropRotate90(1)">⟳ ${t('btn_rotate_right')}</button>
+      </div>
+      <label style="margin-top:8px;">${t('lbl_fine_tilt')}: <span id="scanTiltVal">${s.tiltDeg||0}</span>°</label>
+      <input type="range" min="-45" max="45" step="1" value="${s.tiltDeg||0}" style="width:100%;margin-bottom:6px;" oninput="scanCropTiltChange(this.value)">
+      <div class="row" style="margin-top:4px;">
+        <button class="btn ghost small" onclick="scanCropReset()">${t('btn_reset_crop')}</button>
+        <button class="btn ghost small" onclick="scanCropApplyCrop()">${t('btn_apply_crop')}</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <button class="btn ghost" onclick="scanCropCancel()">${t('btn_scan_retake')}</button>
+        <button class="btn clay" onclick="scanCropConfirm()">${t('btn_continue_scan')}</button>
+      </div>
+    </div>`;
+  }
+  if(s.outcome==='SCAN_LOADING'){
+    return `
+    <div class="sheet-backdrop"></div>
+    <div class="sheet">
+      <h3>${t('scan_loading_title')}</h3>
+      <div class="sub">${t('scan_loading_sub')}</div>
+      <div class="spinner"></div>
+      <div class="loading-text">${t('scan_loading_note')}</div>
+    </div>`;
+  }
   if(s.outcome==='STRIKEOUT_TYPE'){
     return `
     <div class="sheet-backdrop" onclick="state.sheet=null;render()"></div>
@@ -2536,16 +3164,16 @@ function renderSheet(){
   if(s.outcome==='SUB_PLAYER'){
     const tm = team(s.teamKey);
     const outId = tm.lineup[s.lineupIndex];
-    const bench = tm.players.filter(p=>p.num.trim()!=='' && !tm.lineup.includes(p.id));
+    const bench = tm.players.filter(p=>!tm.lineup.includes(p.id));
     return `
     <div class="sheet-backdrop" onclick="state.sheet=null;render()"></div>
     <div class="sheet">
-      <h3>Substitute for #${playerNum(s.teamKey,outId)} ${playerName(s.teamKey,outId)}</h3>
+      <h3>Substitute for ${orderNameJersey(s.teamKey,outId)}</h3>
       ${bench.length ? bench.map(p=>`
         <div class="lineup-pick" onclick="confirmSub('${p.id}')">
-          <span>#${p.num} ${p.name||'(no name)'}</span>
+          <span>${p.num.trim()!==''?'#'+p.num+' ':''}${p.name||'(no name)'}</span>
         </div>
-      `).join('') : '<div class="empty-note">No eligible bench players — give a bench row a jersey number first.</div>'}
+      `).join('') : '<div class="empty-note">No eligible bench players — add one on the Roster tab first.</div>'}
       <button class="btn ghost block" onclick="state.sheet=null;render()">Cancel</button>
     </div>`;
   }
@@ -2557,7 +3185,7 @@ function renderSheet(){
       <h3>Set current batter — ${t.name}</h3>
       ${t.lineup.map((id,i)=>`
         <div class="lineup-pick ${i===t.battingIdx?'cur':''}" onclick="setBatter('${id}')">
-          <span>#${playerNum(s.teamKey,id)} ${playerName(s.teamKey,id)}</span>
+          <span>${orderNameJersey(s.teamKey,id)}</span>
           ${i===t.battingIdx?'<span class="pill">At bat</span>':''}
         </div>
       `).join('')}
@@ -2572,7 +3200,7 @@ function renderSheet(){
       <h3>Set current pitcher — ${tm.name}</h3>
       ${tm.lineup.map(id=>`
         <div class="lineup-pick ${id===tm.currentPitcherId?'cur':''}" onclick="confirmSwitchPitcher('${id}')">
-          <span>#${playerNum(s.teamKey,id)} ${playerName(s.teamKey,id)}</span>
+          <span>${orderNameJersey(s.teamKey,id)}</span>
           ${id===tm.currentPitcherId?'<span class="pill">Pitching</span>':''}
         </div>
       `).join('')}
