@@ -103,6 +103,8 @@
   .import-btn{ flex:1; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; background:#fff; border:1px solid var(--line); border-radius:8px; height:38px; font-size:11.5px; font-weight:600; color:#6b6552; box-shadow:none; }
   .import-btn svg{ width:15px; height:15px; }
   .import-btn.active{ border-color:var(--field-2); background:#F0F7F3; }
+  .btn.icon-btn{ display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+  .btn.icon-btn.tight-pad{ padding-left:6px; padding-right:6px; white-space:nowrap; }
   .paste-panel{ margin-top:10px; border-top:1px dashed var(--line); padding-top:10px; }
   .paste-panel textarea{ width:100%; min-height:74px; padding:10px; border:1.5px solid var(--line); border-radius:10px; font-size:13px; background:#FCFBF7; color:var(--ink); font-family:inherit; resize:vertical; margin-bottom:0; }
   .paste-preview{ font-size:11.5px; color:#5B5648; background:#FAF8F2; border-radius:8px; padding:8px 10px; margin-top:8px; max-height:110px; overflow-y:auto; }
@@ -1493,8 +1495,8 @@ function renderSetup(){
     <h2 class="section-title">${t('hdr_save_load')}</h2>
     <div class="card">
       <div class="row">
-        <button class="btn ghost" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;" ${!state.gameStarted?'disabled':''} onclick="saveGame()">${SAVE_ICON}<span>${t('btn_save_game')}</span></button>
-        <button class="btn ghost" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;" onclick="triggerLoad()">${LOAD_ICON}<span>${t('btn_load_game')}</span></button>
+        <button class="btn ghost icon-btn" ${!state.gameStarted?'disabled':''} onclick="saveGame()">${SAVE_ICON}<span>${t('btn_save_game')}</span></button>
+        <button class="btn ghost icon-btn" onclick="triggerLoad()">${LOAD_ICON}<span>${t('btn_load_game')}</span></button>
       </div>
       <input type="file" id="loadFileInput" accept="application/json" style="display:none" onchange="handleLoadFile(this)">
       <div style="font-size:11px;color:#8a8373;margin-top:6px;">${t('save_load_hint')}</div>
@@ -2465,7 +2467,7 @@ function renderBox(){
   }
   return `
   ${state.gameOver? renderGameOverBanner(false) : ''}
-  <button class="btn clay block" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;" onclick="exportCSV()">${CSV_ICON}<span>${t('btn_export_csv')}</span></button>
+  <button class="btn clay block icon-btn" onclick="exportCSV()">${CSV_ICON}<span>${t('btn_export_csv')}</span></button>
   ${teamBlock('us')}
   ${teamBlock('them')}
   <h2 class="section-title">${t('hdr_play_log')}</h2>
@@ -2513,8 +2515,8 @@ function renderScorebookGrid(){
   return `
   <div class="card grid-print-hide" style="padding:11px 12px;">
     <div class="row">
-      <button class="btn ghost small" style="display:inline-flex;align-items:center;justify-content:center;gap:5px;" onclick="printScorebook()">${PDF_ICON}<span>${t('btn_print_pdf')}</span></button>
-      <button class="btn ghost small" style="display:inline-flex;align-items:center;justify-content:center;gap:5px;" onclick="exportScorebookImage()">${IMAGE_ICON}<span>${t('btn_export_img')}</span></button>
+      <button class="btn clay icon-btn tight-pad" onclick="printScorebook()">${PDF_ICON}<span>${t('btn_print_pdf')}</span></button>
+      <button class="btn clay icon-btn tight-pad" onclick="exportScorebookImage()">${IMAGE_ICON}<span>${t('btn_export_img')}</span></button>
     </div>
   </div>
   <div class="teamtabs">
