@@ -298,13 +298,23 @@ function makeDefaultPlayers(){ return Array.from({length:9}, ()=>({id:uid(), nam
 function uid(){ return 'p'+Math.random().toString(36).slice(2,9); }
 function newTeam(name){ return { name, players: makeDefaultPlayers(), lineup: [], battingIdx:0, stats:{}, pitchStats:{}, currentPitcherId:null, subHistory:{} }; }
 
-const APP_VERSION = '10.1';
+const APP_VERSION = '10.3';
 // Material Symbols Outlined "document_scanner" path (Apache 2.0) — used on the roster Scan button.
 const SCAN_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex:none;"><path d="M2 6V1h5v2H4v3Zm18 0V3h-3V1h5v5ZM2 23v-5h2v3h3v2Zm15 0v-2h3v-3h2v5ZM7 20q-.825 0-1.412-.587Q5 18.825 5 18V6q0-.825.588-1.412Q6.175 4 7 4h10q.825 0 1.413.588Q19 5.175 19 6v12q0 .825-.587 1.413Q17.825 20 17 20Zm2-10h6V8H9Zm0 3h6v-2H9Zm0 3h6v-2H9Z"/></svg>';
 // Material Symbols Outlined "photo_library" path (Apache 2.0) — used on the roster "From Image" button.
 const LIBRARY_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex:none;"><path d="M20 4v12H8V4h12m0-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 9.67 1.69 2.26 2.48-3.1L19 15H9zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/></svg>';
 // Material Icons "content_copy" (Apache 2.0) — used on the roster "Paste List" button.
 const PASTE_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex:none;"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
+// Material Symbols Outlined "save" (Apache 2.0) — Roster tab Save Game button.
+const SAVE_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex:none;"><path d="M21 7v12q0 .825-.587 1.413Q19.825 21 19 21H5q-.825 0-1.413-.587Q3 19.825 3 19V5q0-.825.587-1.413Q4.175 3 5 3h12Zm-2 .85L16.15 5H5v14h14ZM12 18q1.25 0 2.125-.875T15 15q0-1.25-.875-2.125T12 12q-1.25 0-2.125.875T9 15q0 1.25.875 2.125T12 18Zm-6-8h9V6H6ZM5 7.85V19 5Z"/></svg>';
+// Material Symbols Outlined "file_open" (Apache 2.0) — Roster tab Load Game button.
+const LOAD_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex:none;"><path d="M6 22q-.825 0-1.412-.587Q4 20.825 4 20V4q0-.825.588-1.413Q5.175 2 6 2h8l6 6v6h-2V9h-5V4H6v16h9v2Zm15.95.375L19 19.425v2.225h-2V16h5.65v2H20.4l2.95 2.95ZM6 20V4v16Z"/></svg>';
+// Material Symbols Outlined "picture_as_pdf" (Apache 2.0) — Scorebook tab Print/PDF button.
+const PDF_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex:none;"><path d="M9 13h1v-2h1q.425 0 .713-.288Q12 10.425 12 10V9q0-.425-.287-.713Q11.425 8 11 8H9Zm1-3V9h1v1Zm3 3h2q.425 0 .713-.288Q16 12.425 16 12V9q0-.425-.287-.713Q15.425 8 15 8h-2Zm1-1V9h1v3Zm3 1h1v-2h1v-1h-1V9h1V8h-2Zm-9 5q-.825 0-1.412-.587Q6 16.825 6 16V4q0-.825.588-1.413Q7.175 2 8 2h12q.825 0 1.413.587Q22 3.175 22 4v12q0 .825-.587 1.413Q20.825 18 20 18Zm-4 4q-.825 0-1.412-.587Q2 20.825 2 20V6h2v14h14v2Z"/></svg>';
+// Material Symbols Outlined "image" (Apache 2.0) — Scorebook tab Export Image button.
+const IMAGE_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex:none;"><path d="M5 21q-.825 0-1.413-.587Q3 19.825 3 19V5q0-.825.587-1.413Q4.175 3 5 3h14q.825 0 1.413.587Q21 4.175 21 5v14q0 .825-.587 1.413Q19.825 21 19 21Zm0-2h14V5H5v14Zm1-2h12l-3.75-5-3 4L9 13Zm-1 2V5v14Z"/></svg>';
+// Material Symbols Outlined "csv" (Apache 2.0) — Box Score tab Export CSV button.
+const CSV_ICON = '<svg width="16" height="16" viewBox="0 -960 960 960" fill="currentColor" style="flex:none;"><path d="M221-357h127v-50H238v-146h110v-50H221q-14.02 0-23.51 9.78Q188-583.45 188-569v179q0 14.02 9.49 23.51Q206.98-357 221-357Zm166 0h137q14.03 0 23.51-9.49Q557-375.98 557-390v-78q0-13-9.49-22-9.48-9-23.51-9h-87v-54h120v-50H420q-14.02 0-23.51 9.49Q387-584.03 387-570v78q0 14 9.49 23.5T420-459h87v52H387v50Zm271 0h57l75-246h-50l-53 183-47-183h-50l68 246ZM140-160q-24 0-42-18t-18-42v-520q0-24 18-42t42-18h680q24 0 42 18t18 42v520q0 24-18 42t-42 18H140Zm0-60h680v-520H140v520Zm0 0v-520 520Z"/></svg>';
 // Drag handle (6-dot grip) — pre-game Batting Order / Bench rows only.
 const GRIP_ICON = '<svg viewBox="0 0 12 20" fill="currentColor"><circle cx="3" cy="3" r="1.6"/><circle cx="9" cy="3" r="1.6"/><circle cx="3" cy="10" r="1.6"/><circle cx="9" cy="10" r="1.6"/><circle cx="3" cy="17" r="1.6"/><circle cx="9" cy="17" r="1.6"/></svg>';
 let state = {
@@ -351,7 +361,7 @@ let state = {
 const STRINGS = {
   en: {
     tab_roster:'Roster', tab_live:'Live', tab_scorebook:'Scorebook', tab_box:'Box Score',
-    hdr_save_load:'Save / Load Game', btn_save_game:'⬇ Save Game', btn_load_game:'⬆ Load Game',
+    hdr_save_load:'Save / Load Game', btn_save_game:'Save Game', btn_load_game:'Load Game',
     save_load_hint:'Save downloads a file with the full game state — scores, stats, rosters, everything. Load it later (even on another device) to pick up right where you left off. Loading replaces whatever is currently on screen.',
     hdr_settings:'Game Settings',
     lbl_first_bat:'Who bats first (top of inning 1)',
@@ -372,8 +382,8 @@ const STRINGS = {
     hdr_at_bat:'At Bat', hdr_result:'Result of At-Bat', grp_on_base:'Batter reaches base / scores', grp_out:'Batter is out',
     grp_on_base_short:'On Base', grp_out_short:'Out',
     btn_undo:'↺ Undo', btn_batter:'Batter', btn_save:'Save', btn_end_half:'End ½ Inn', btn_end_game:'End Game',
-    btn_export_csv:'⬇ Export Page to CSV', hdr_play_log:'Play Log',
-    btn_print_pdf:'🖨️ Print / Save as PDF', btn_export_img:'🖼️ Export as Image',
+    btn_export_csv:'Export Page to CSV', hdr_play_log:'Play Log',
+    btn_print_pdf:'Print / Save as PDF', btn_export_img:'Export as Image',
     hdr_batting:'Batting', hdr_pitching:'Pitching',
     out_hbp:'Hit by Pitch', out_fc:"Fielder's Choice", out_e:'Error',
     out_k:'Strikeout', out_go:'Ground Out', out_fo:'Fly Out', out_pu:'Pop Out', out_dp:'Double Play', out_sf:'Sac Fly', out_sac:'Sac Bunt',
@@ -393,7 +403,7 @@ const STRINGS = {
   },
   ja: {
     tab_roster:'名簿', tab_live:'ライブ', tab_scorebook:'スコアブック', tab_box:'ボックススコア',
-    hdr_save_load:'試合の保存・読込', btn_save_game:'⬇ 試合を保存', btn_load_game:'⬆ 試合を読込',
+    hdr_save_load:'試合の保存・読込', btn_save_game:'試合を保存', btn_load_game:'試合を読込',
     save_load_hint:'保存すると、スコア・成績・名簿など試合の全データを含むファイルがダウンロードされます。後で（別の端末でも）読み込めば、続きから再開できます。読み込むと現在の画面の内容は上書きされます。',
     hdr_settings:'試合設定',
     lbl_first_bat:'先攻（1回表の攻撃）',
@@ -414,8 +424,8 @@ const STRINGS = {
     hdr_at_bat:'打席', hdr_result:'打席の結果', grp_on_base:'出塁・得点', grp_out:'アウト',
     grp_on_base_short:'出塁', grp_out_short:'アウト',
     btn_undo:'↺ 元に戻す', btn_batter:'打者', btn_save:'保存', btn_end_half:'半回終了', btn_end_game:'試合終了',
-    btn_export_csv:'⬇ ページをCSV出力', hdr_play_log:'プレー記録',
-    btn_print_pdf:'🖨️ 印刷 / PDF保存', btn_export_img:'🖼️ 画像として保存',
+    btn_export_csv:'ページをCSV出力', hdr_play_log:'プレー記録',
+    btn_print_pdf:'印刷 / PDF保存', btn_export_img:'画像として保存',
     hdr_batting:'打撃成績', hdr_pitching:'投手成績',
     out_hbp:'死球', out_fc:'フィルダースチョイス', out_e:'エラー',
     out_k:'三振', out_go:'ゴロアウト', out_fo:'フライアウト', out_pu:'ポップアウト', out_dp:'ダブルプレー', out_sf:'犠飛', out_sac:'犠打',
@@ -1196,14 +1206,35 @@ function ops(st){
 
 // ---------------- AUTOSAVE (localStorage, silent, survives refresh) ----------------
 const AUTOSAVE_KEY = 'scorekeeper_autosave_v1';
-function autosaveSnapshot(){
-  return {
+// Shared shape for both the downloaded save file and the silent localStorage autosave — keeps the two
+// from drifting apart on which fields are included or what their defaults are.
+function buildGameData(includeScreen){
+  const data = {
     v:2, firstBatting: state.firstBatting, trackPitching: state.trackPitching,
     gameStarted: state.gameStarted, gameOver: state.gameOver,
     teams: state.teams, inning: state.inning, half: state.half, outs: state.outs,
     bases: state.bases, innings: state.innings, log: state.log, scorebook: state.scorebook, count: state.count,
-    slotSubIndex: state.slotSubIndex, screen: state.screen
+    slotSubIndex: state.slotSubIndex
   };
+  if(includeScreen) data.screen = state.screen;
+  return data;
+}
+// Applies a saved-file or autosaved data object onto `state`. Shared by file-load and autosave-restore
+// so both stay in sync on defaults (count always includes `fouls`) and on the legacy-field fallback for
+// firstBatting from older exports (isHome/firstBats, predating the firstBatting field itself).
+function applyGameData(data){
+  state.firstBatting = data.firstBatting || (data.isHome===false ? (data.firstBats==='home'?'us':'them') : (data.firstBats==='home'?'them':'us')) || 'us';
+  state.trackPitching = !!data.trackPitching;
+  state.gameStarted = data.gameStarted; state.gameOver = !!data.gameOver;
+  state.teams = data.teams; state.inning = data.inning; state.half = data.half; state.outs = data.outs;
+  state.bases = data.bases; state.innings = data.innings; state.log = data.log || [];
+  state.scorebook = data.scorebook || {}; state.count = data.count || {balls:0,strikes:0,fouls:0};
+  state.slotSubIndex = data.slotSubIndex || {};
+  state.sheet = null; state.history = [];
+  state.screen = state.gameOver ? 'box' : (state.gameStarted ? 'game' : 'setup');
+}
+function autosaveSnapshot(){
+  return buildGameData(true);
 }
 // Called at the end of every render() — silent, no user acknowledgment needed. Always saves current
 // state (setup-in-progress, live game, or finished game) so a refresh at any point is recoverable;
@@ -1242,15 +1273,7 @@ function restoreAutosaveIfAny(){
     localStorage.removeItem(AUTOSAVE_KEY);
     return;
   }
-  state.firstBatting = data.firstBatting || 'us';
-  state.trackPitching = !!data.trackPitching;
-  state.gameStarted = data.gameStarted; state.gameOver = !!data.gameOver;
-  state.teams = data.teams; state.inning = data.inning; state.half = data.half; state.outs = data.outs;
-  state.bases = data.bases; state.innings = data.innings; state.log = data.log || [];
-  state.scorebook = data.scorebook || {}; state.count = data.count || {balls:0,strikes:0,fouls:0};
-  state.slotSubIndex = data.slotSubIndex || {};
-  state.sheet = null; state.history = [];
-  state.screen = state.gameOver ? 'box' : (state.gameStarted ? 'game' : 'setup');
+  applyGameData(data);
 }
 // Active unconditionally from page load — not gated on game state, so accidental refreshes are caught
 // even while still filling out rosters (before a game has started) and don't stop being caught once a
@@ -1261,13 +1284,7 @@ window.addEventListener('beforeunload', (e)=>{
 
 // ---------------- SAVE / LOAD GAME ----------------
 function saveGame(){
-  const data = {
-    v:2, firstBatting: state.firstBatting, trackPitching: state.trackPitching,
-    gameStarted: state.gameStarted, gameOver: state.gameOver,
-    teams: state.teams, inning: state.inning, half: state.half, outs: state.outs,
-    bases: state.bases, innings: state.innings, log: state.log, scorebook: state.scorebook, count: state.count,
-    slotSubIndex: state.slotSubIndex
-  };
+  const data = buildGameData(false);
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -1285,15 +1302,7 @@ function handleLoadFile(input){
   reader.onload = (e)=>{
     try{
       const data = JSON.parse(e.target.result);
-      state.firstBatting = data.firstBatting || (data.isHome===false ? (data.firstBats==='home'?'us':'them') : (data.firstBats==='home'?'them':'us')) || 'us';
-      state.trackPitching = !!data.trackPitching;
-      state.gameStarted = data.gameStarted; state.gameOver = !!data.gameOver;
-      state.teams = data.teams; state.inning = data.inning; state.half = data.half; state.outs = data.outs;
-      state.bases = data.bases; state.innings = data.innings; state.log = data.log || [];
-      state.scorebook = data.scorebook || {}; state.count = data.count || {balls:0,strikes:0};
-      state.slotSubIndex = data.slotSubIndex || {};
-      state.sheet = null; state.history = [];
-      state.screen = state.gameOver ? 'box' : (state.gameStarted ? 'game' : 'setup');
+      applyGameData(data);
       render();
     } catch(err){
       alert('Could not read that file — make sure it\'s a game file exported from this app.');
@@ -1484,8 +1493,8 @@ function renderSetup(){
     <h2 class="section-title">${t('hdr_save_load')}</h2>
     <div class="card">
       <div class="row">
-        <button class="btn ghost" ${!state.gameStarted?'disabled':''} onclick="saveGame()">${t('btn_save_game')}</button>
-        <button class="btn ghost" onclick="triggerLoad()">${t('btn_load_game')}</button>
+        <button class="btn ghost" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;" ${!state.gameStarted?'disabled':''} onclick="saveGame()">${SAVE_ICON}<span>${t('btn_save_game')}</span></button>
+        <button class="btn ghost" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;" onclick="triggerLoad()">${LOAD_ICON}<span>${t('btn_load_game')}</span></button>
       </div>
       <input type="file" id="loadFileInput" accept="application/json" style="display:none" onchange="handleLoadFile(this)">
       <div style="font-size:11px;color:#8a8373;margin-top:6px;">${t('save_load_hint')}</div>
@@ -2138,9 +2147,10 @@ function fieldFielderMarkers(renderW){ return Object.keys(FIELD_FIELDERS).map(n=
 // mound, foul lines, home plate, pitching rubber, and the defs they depend on. Each caller embeds its
 // own copy of this markup (defs can't be shared across separate inline <svg> elements), then layers its
 // own interactive bases / fielder overlay / labels on top.
-function fieldBackgroundSVG(){
-  return `
-    <defs>
+// Shared <defs> inner markup (filter, dirt/mound gradients, grassClip, outfieldFade) — identical
+// across the full-field and compact-field backgrounds; each caller wraps this in its own <defs>,
+// appending any background-specific clip path after it.
+const FIELD_DEFS_SHARED = `
       <filter id="baseShadow" x="-30%" y="-30%" width="160%" height="160%">
         <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.12"/>
       </filter>
@@ -2155,7 +2165,29 @@ function fieldBackgroundSVG(){
         <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0"/>
         <stop offset="82%" stop-color="#FFFFFF" stop-opacity="0"/>
         <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.22"/>
-      </linearGradient>
+      </linearGradient>`;
+// Shared grass-shape clip path, grass-stripe rects, mound, and outfield fade overlay — identical
+// across both backgrounds (only the dirt-infield path itself differs slightly between the two source
+// assets, so that stays local to each caller).
+const FIELD_GRASS_MOUND_SHARED = `
+    <path id="grassShape" d="M 0 0 C 0.804 1.268 0.804 1.268 1.625 2.563 C 7.858 12.183 19.424 18.429 30.313 21.438 C 47.351 24.261 62.825 21.03 77 11 C 80.868 7.654 84.162 4.257 87 0 C 88.813 0.188 88.813 0.188 91 1 C 92.026 2.651 538.531 450.379 541.875 453.375 C 555.899 465.983 555.899 465.983 559 473 C 558.576 473.415 558.152 473.83 557.715 474.258 C 547.414 485.079 542.51 498.534 542.498 513.305 C 542.871 528.096 548.522 541.522 559 552 C 558.672 555.365 557.323 557.053 554.983 559.396 C 554.334 560.053 108.392 1006.357 107.812 1006.937 C 106 1008 106 1008 103.481 1007.748 C 100.268 1006.779 97.176 1005.557 94.063 1004.313 C 87.332 1001.709 71.741 997.179 70.803 996.917 C 44.108 989.749 13.836 993.44 -11.148 1004.483 C -12.39 1005.012 -15.137 1006.204 -15.9 1006.54 C -18.68 1007.149 -19.578 1006.426 -22 1005 C -23.683 1003.569 -470.365 557.259 -470.943 556.682 C -472 555 -472 555 -471.768 552.912 C -470.789 550.473 -469.42 548.975 -467.625 547.063 C -464.994 544.184 -462.993 541.357 -461 538 C -460.34 538 -457.115 531.744 -456.852 530.871 C -456.571 529.924 -455.288 525.863 -454.922 524.762 C -451.716 511.68 -453.111 496.623 -459.754 484.906 C -460.938 483.028 -468.98 473 -470 473 C -470.68 471.219 -470.68 471.219 -471 469 C -469.892 467.268 -469.892 467.268 -468.119 465.496 C -467.45 464.815 -4.086 1.834 -3.484 1.232 C -2 0 -2 0 0 0 Z" fill="#3B7438" transform="translate(1526,888)" />
+    <g clip-path="url(#grassClip)">
+      <rect x="960" y="650" width="110" height="1700" fill="#3b7438"/><rect x="1070" y="650" width="110" height="1700" fill="#234B28"/>
+      <rect x="1180" y="650" width="110" height="1700" fill="#3b7438"/><rect x="1290" y="650" width="110" height="1700" fill="#234B28"/>
+      <rect x="1400" y="650" width="110" height="1700" fill="#3b7438"/><rect x="1510" y="650" width="110" height="1700" fill="#234B28"/>
+      <rect x="1620" y="650" width="110" height="1700" fill="#3b7438"/><rect x="1730" y="650" width="110" height="1700" fill="#234B28"/>
+      <rect x="1840" y="650" width="110" height="1700" fill="#3b7438"/><rect x="1950" y="650" width="110" height="1700" fill="#234B28"/>
+      <rect x="2060" y="650" width="110" height="1700" fill="#3b7438"/>
+    </g>
+    <ellipse cx="1568.7" cy="1380.28" rx="93.972" ry="93.974" fill="url(#moundGrad)" stroke="#A26C39" stroke-width="1" stroke-opacity="0.35" filter="url(#baseShadow)" />
+    <rect x="668.566" y="533.307" width="1783.884" height="1690.543" fill="url(#outfieldFade)"/>`;
+
+// Shared dirt-infield path (verbatim from the project's source field SVGs — baseballfield_v10.svg /
+// baseballfield_v8dgreen.svg both agree on this exact curve).
+const FIELD_DIRT_PATH = `<path d="M 1563.28 691.87 C 1567.13 691.875 1570.98 691.87 1574.83 691.863 C 1586.69 691.86 1598.53 691.965 1610.38 692.449 C 1611.34 692.488 1612.3 692.528 1613.3 692.568 C 1619.83 692.869 1626.21 693.563 1632.68 694.473 C 1638.08 695.185 1643.51 695.498 1648.94 695.875 C 1671.89 697.558 1694.54 700.582 1717.19 704.562 C 1718.03 704.71 1718.87 704.858 1719.73 705.01 C 1735.83 707.855 1751.71 711.332 1767.56 715.312 C 1768.35 715.51 1769.14 715.707 1769.95 715.91 C 1786.47 720.056 1802.89 724.425 1819 730 C 1820.42 730.471 1821.85 730.941 1823.27 731.41 C 1827.84 732.931 1832.36 734.571 1836.88 736.25 C 1838.53 736.863 1840.19 737.477 1841.84 738.09 C 1842.69 738.403 1843.53 738.716 1844.4 739.039 C 1847.03 740.01 1849.65 740.977 1852.28 741.941 C 1853.13 742.255 1853.99 742.569 1854.87 742.892 C 1856.5 743.492 1858.13 744.091 1859.77 744.69 C 1865.77 746.897 1871.6 749.25 1877.38 752 C 1883.04 754.678 1888.75 757.198 1894.51 759.659 C 1903.37 763.45 1912.01 767.395 1920.44 772.059 C 1924.98 774.565 1929.63 776.842 1934.29 779.124 C 1939.28 781.59 1944.14 784.272 1949 787 C 1950.79 787.994 1952.59 788.987 1954.38 789.98 C 1964.26 795.482 1973.95 801.075 1983.27 807.477 C 1987.59 810.437 1992.05 813.172 1996.5 815.937 C 2004.36 820.848 2011.83 826.126 2019.23 831.688 C 2022.14 833.845 2025.1 835.916 2028.06 838 C 2034.71 842.711 2041.11 847.721 2047.48 852.798 C 2049.49 854.389 2051.53 855.944 2053.56 857.5 C 2061.57 863.711 2069.22 870.389 2076.81 877.094 C 2079.08 879.072 2081.39 881.012 2083.69 882.954 C 2089.51 887.889 2095.19 892.956 2100.75 898.191 C 2101.47 898.876 2102.2 899.562 2102.95 900.267 C 2111.15 908.036 2119.16 916.004 2127.13 924.003 C 2129.65 926.529 2132.18 929.05 2134.71 931.57 C 2136.34 933.203 2137.97 934.836 2139.6 936.469 C 2140.34 937.208 2141.09 937.948 2141.85 938.71 C 2145.89 942.774 2149.78 946.928 2153.51 951.276 C 2155.58 953.673 2157.73 955.989 2159.88 958.312 C 2163.94 962.773 2167.8 967.356 2171.59 972.055 C 2173.83 974.793 2176.13 977.474 2178.45 980.148 C 2183.48 985.946 2188.22 991.852 2192.77 998.047 C 2195.94 1002.24 2199.32 1006.22 2202.74 1010.21 C 2205.03 1013.04 2206.99 1015.96 2209 1019 C 2210.82 1021.48 2212.7 1023.93 2214.56 1026.38 C 2220.22 1033.86 2225.57 1041.53 2230.84 1049.3 C 2232.34 1051.49 2233.89 1053.65 2235.44 1055.81 C 2239.38 1061.41 2242.97 1067.25 2246.6 1073.05 C 2249.13 1077.08 2251.68 1081.04 2254.5 1084.88 C 2258.69 1090.69 2262.08 1097 2265.56 1103.25 C 2267.92 1107.46 2270.34 1111.57 2273.06 1115.56 C 2276.08 1120.01 2278.56 1124.65 2281 1129.44 C 2284.87 1136.92 2284.87 1136.92 2289.13 1144.19 C 2291.86 1148.63 2294.18 1153.25 2296.48 1157.93 C 2299.26 1163.59 2302.17 1169.17 2305.1 1174.75 C 2311.52 1186.98 2317.59 1199.29 2323 1212 C 2323.41 1212.94 2323.82 1213.88 2324.23 1214.85 C 2325 1217 2326.32 1220 2327 1220 C 2329.97 1227.26 2332.94 1234.52 2336 1242 C 2336.018 1242 2336.036 1242 2336.054 1242 L 2340.958 1255.816 C 2340.955 1255.834 2340.953 1255.852 2340.95 1255.87 C 2341.165 1256.506 2341.389 1257.11 2341.624 1257.692 C 2342.528 1259.926 2343.604 1261.834 2345 1264 C 2346.64 1268.11 2348.07 1272.3 2349.5 1276.49 C 2350.19 1278.5 2350.89 1280.5 2351.59 1282.5 C 2352.03 1283.78 2352.48 1285.06 2352.92 1286.34 C 2353.32 1287.5 2353.72 1288.66 2354.13 1289.85 C 2354.93 1292.76 2355.19 1295.01 2355 1298 C 2354.34 1298 1700.18 1963.82 1699 1965 C 1699.43 1969.18 1701 1973.06 1702.38 1977 C 1713.04 2008.24 1713.53 2049.9 1698.91 2080.26 C 1698.61 2080.83 1696.38 2085.265 1696.29 2085.955 C 1687.195 2111.855 1660.88 2133.39 1638.98 2146.86 C 1627.95 2153.13 1601.57 2161.72 1600.32 2162.1 C 1566.54 2172.06 1530.08 2165.18 1499.41 2148.9 C 1495.08 2146.49 1485.24 2139.77 1484.33 2139.13 C 1475.18 2132.64 1459.13 2115.98 1458.67 2115.46 C 1450.24 2105.64 1436.68 2080 1436 2080 C 1431.23 2069.29 1426.76 2045.6 1426.64 2044.88 C 1422.72 2021.33 1424.4 1993.35 1434.21 1971.27 C 1435.18 1968.48 1435.09 1967.73 1434 1965 C 1432.25 1963.01 785.398 1306.01 783.59 1304.24 C 782.746 1303.45 782.746 1303.45 781.886 1302.65 C 779.105 1299.89 778.041 1298.35 777.577 1294.41 C 777.933 1291.54 778.351 1288.94 779.172 1286.18 C 779.422 1285.32 779.673 1284.46 779.931 1283.58 C 780.201 1282.68 780.472 1281.79 780.75 1280.88 C 781.022 1279.95 781.294 1279.03 781.575 1278.08 C 782.374 1275.38 783.186 1272.69 784 1270 C 784.419 1268.59 784.837 1267.18 785.254 1265.77 C 787.843 1257.16 789.007 1255.652 789.011 1255.487 C 789.011 1255.487 794.948 1240.978 795 1241.001 C 795.351 1239.741 795.701 1238.481 796.063 1237.191 C 800.232 1223.401 805.667 1210.191 811.676 1197.121 C 814.08 1191.871 816.322 1186.571 818.563 1181.251 C 821.458 1174.421 824.514 1167.731 827.897 1161.131 C 831.323 1154.441 834.508 1147.641 837.676 1140.831 C 838.079 1139.971 838.483 1139.111 838.898 1138.231 C 839.435 1137.081 839.435 1137.081 839.982 1135.901 C 841 1134.001 841 1134.001 843 1132.001 C 843.714 1130.341 844.424 1128.691 845.112 1127.021 C 846.721 1123.361 848.724 1119.921 850.688 1116.441 C 851.13 1115.651 851.572 1114.861 852.027 1114.051 C 853.347 1111.701 854.673 1109.351 856 1107.001 C 856.363 1106.361 856.726 1105.711 857.101 1105.051 C 862.238 1095.931 867.557 1086.931 873 1078.001 C 873.357 1077.411 873.714 1076.821 874.083 1076.221 C 890.103 1049.891 907.608 1024.221 926.524 999.906 C 927.911 998.116 929.283 996.318 930.648 994.513 C 935.683 987.871 940.926 981.455 946.344 975.126 C 948.802 972.25 951.187 969.32 953.563 966.376 C 957.442 961.609 961.519 957.059 965.68 952.536 C 967.573 950.468 969.423 948.377 971.25 946.251 C 981.434 934.568 992.317 923.52 1003.29 912.582 C 1005.4 910.478 1007.5 908.369 1009.61 906.259 C 1010.97 904.891 1012.34 903.524 1013.71 902.157 C 1014.33 901.54 1014.94 900.924 1015.57 900.288 C 1019.34 896.547 1023.22 892.994 1027.23 889.53 C 1029.64 887.447 1031.97 885.286 1034.31 883.126 C 1038.8 879.032 1043.41 875.146 1048.14 871.333 C 1050.64 869.296 1053.09 867.218 1055.53 865.116 C 1068.73 853.788 1082.8 843.585 1096.94 833.48 C 1098.79 832.149 1100.63 830.806 1102.47 829.454 C 1112.97 821.772 1123.98 814.894 1135 808.001 C 1135.68 807.575 1136.36 807.149 1137.06 806.709 C 1144.62 801.988 1152.28 797.453 1160 793.001 C 1161.09 792.363 1162.18 791.725 1163.3 791.067 C 1170.17 787.076 1177.12 783.369 1184.25 779.861 C 1188.04 777.996 1191.76 776.065 1195.44 774.001 C 1209.3 766.361 1224.02 760.287 1238.55 754.055 C 1240.49 753.222 1242.42 752.38 1244.36 751.536 C 1262.77 743.635 1282 737.502 1300.95 731.042 C 1302.75 730.426 1304.56 729.806 1306.36 729.177 C 1313.18 726.822 1320.15 725.023 1327.13 723.188 C 1328.47 722.833 1329.82 722.478 1331.17 722.122 C 1333.2 721.586 1335.24 721.049 1337.28 720.514 C 1341.14 719.498 1345 718.457 1348.85 717.392 C 1371.3 711.238 1394.37 706.543 1417.46 703.606 C 1420.71 703.194 1423.91 702.678 1427.13 702.114 C 1437.02 700.442 1446.99 699.25 1456.94 698.001 C 1458.01 697.867 1459.07 697.733 1460.17 697.594 C 1477.1 695.484 1493.95 693.743 1511 693.001 C 1511.86 692.96 1512.73 692.92 1513.62 692.878 C 1530.17 692.108 1546.7 691.843 1563.28 691.871 L 1563.28 691.87 Z" fill="url(#dirtGrad)" />`;
+
+const FIELD_BACKGROUND_SVG = `
+    <defs>${FIELD_DEFS_SHARED}
     </defs>
     <g>
       <rect x="668.6" y="533" width="75.1" height="1700" fill="#234B28"/>
@@ -2177,23 +2209,12 @@ function fieldBackgroundSVG(){
       <rect x="2393.7" y="533" width="58" height="1700" fill="#234B28"/>
       <polygon points="668.566,2223.85 668.566,1121.42 1567.2,2014.0 2452.45,1133.03 2452.45,2223.85" fill="#234B28"/>
     </g>
-    <path d="M 1563.28 691.87 C 1567.13 691.875 1570.98 691.87 1574.83 691.863 C 1586.69 691.86 1598.53 691.965 1610.38 692.449 C 1611.34 692.488 1612.3 692.528 1613.3 692.568 C 1619.83 692.869 1626.21 693.563 1632.68 694.473 C 1638.08 695.185 1643.51 695.498 1648.94 695.875 C 1671.89 697.558 1694.54 700.582 1717.19 704.562 C 1718.03 704.71 1718.87 704.858 1719.73 705.01 C 1735.83 707.855 1751.71 711.332 1767.56 715.312 C 1768.35 715.51 1769.14 715.707 1769.95 715.91 C 1786.47 720.056 1802.89 724.425 1819 730 C 1820.42 730.471 1821.85 730.941 1823.27 731.41 C 1827.84 732.931 1832.36 734.571 1836.88 736.25 C 1838.53 736.863 1840.19 737.477 1841.84 738.09 C 1842.69 738.403 1843.53 738.716 1844.4 739.039 C 1847.03 740.01 1849.65 740.977 1852.28 741.941 C 1853.13 742.255 1853.99 742.569 1854.87 742.892 C 1856.5 743.492 1858.13 744.091 1859.77 744.69 C 1865.77 746.897 1871.6 749.25 1877.38 752 C 1883.04 754.678 1888.75 757.198 1894.51 759.659 C 1903.37 763.45 1912.01 767.395 1920.44 772.059 C 1924.98 774.565 1929.63 776.842 1934.29 779.124 C 1939.28 781.59 1944.14 784.272 1949 787 C 1950.79 787.994 1952.59 788.987 1954.38 789.98 C 1964.26 795.482 1973.95 801.075 1983.27 807.477 C 1987.59 810.437 1992.05 813.172 1996.5 815.937 C 2004.36 820.848 2011.83 826.126 2019.23 831.688 C 2022.14 833.845 2025.1 835.916 2028.06 838 C 2034.71 842.711 2041.11 847.721 2047.48 852.798 C 2049.49 854.389 2051.53 855.944 2053.56 857.5 C 2061.57 863.711 2069.22 870.389 2076.81 877.094 C 2079.08 879.072 2081.39 881.012 2083.69 882.954 C 2089.51 887.889 2095.19 892.956 2100.75 898.191 C 2101.47 898.876 2102.2 899.562 2102.95 900.267 C 2111.15 908.036 2119.16 916.004 2127.13 924.003 C 2129.65 926.529 2132.18 929.05 2134.71 931.57 C 2136.34 933.203 2137.97 934.836 2139.6 936.469 C 2140.34 937.208 2141.09 937.948 2141.85 938.71 C 2145.89 942.774 2149.78 946.928 2153.51 951.276 C 2155.58 953.673 2157.73 955.989 2159.88 958.312 C 2163.94 962.773 2167.8 967.356 2171.59 972.055 C 2173.83 974.793 2176.13 977.474 2178.45 980.148 C 2183.48 985.946 2188.22 991.852 2192.77 998.047 C 2195.94 1002.24 2199.32 1006.22 2202.74 1010.21 C 2205.03 1013.04 2206.99 1015.96 2209 1019 C 2210.82 1021.48 2212.7 1023.93 2214.56 1026.38 C 2220.22 1033.86 2225.57 1041.53 2230.84 1049.3 C 2232.34 1051.49 2233.89 1053.65 2235.44 1055.81 C 2239.38 1061.41 2242.97 1067.25 2246.6 1073.05 C 2249.13 1077.08 2251.68 1081.04 2254.5 1084.88 C 2258.69 1090.69 2262.08 1097 2265.56 1103.25 C 2267.92 1107.46 2270.34 1111.57 2273.06 1115.56 C 2276.08 1120.01 2278.56 1124.65 2281 1129.44 C 2284.87 1136.92 2284.87 1136.92 2289.13 1144.19 C 2291.86 1148.63 2294.18 1153.25 2296.48 1157.93 C 2299.26 1163.59 2302.17 1169.17 2305.1 1174.75 C 2311.52 1186.98 2317.59 1199.29 2323 1212 C 2323.41 1212.94 2323.82 1213.88 2324.23 1214.85 C 2325 1217 2326.32 1220 2327 1220 C 2329.97 1227.26 2332.94 1234.52 2336 1242 L 2340.958 1255.816 C 2341.165 1256.506 2341.389 1257.11 2341.624 1257.692 C 2342.528 1259.926 2343.604 1261.834 2345 1264 C 2346.64 1268.11 2348.07 1272.3 2349.5 1276.49 C 2350.19 1278.5 2350.89 1280.5 2351.59 1282.5 C 2352.03 1283.78 2352.48 1285.06 2352.92 1286.34 C 2353.32 1287.5 2353.72 1288.66 2354.13 1289.85 C 2354.93 1292.76 2355.19 1295.01 2355 1298 C 2354.34 1298 1700.18 1963.82 1699 1965 C 1699.43 1969.18 1701 1973.06 1702.38 1977 C 1713.04 2008.24 1713.53 2049.9 1698.91 2080.26 C 1698.61 2080.83 1696.38 2085.265 1696.29 2085.955 C 1687.195 2111.855 1660.88 2133.39 1638.98 2146.86 C 1627.95 2153.13 1601.57 2161.72 1600.32 2162.1 C 1566.54 2172.06 1530.08 2165.18 1499.41 2148.9 C 1495.08 2146.49 1485.24 2139.77 1484.33 2139.13 C 1475.18 2132.64 1459.13 2115.98 1458.67 2115.46 C 1450.24 2105.64 1436.68 2080 1436 2080 C 1431.23 2069.29 1426.76 2045.6 1426.64 2044.88 C 1422.72 2021.33 1424.4 1993.35 1434.21 1971.27 C 1435.18 1968.48 1435.09 1967.73 1434 1965 C 1432.25 1963.01 785.398 1306.01 783.59 1304.24 C 782.746 1303.45 782.746 1303.45 781.886 1302.65 C 779.105 1299.89 778.041 1298.35 777.577 1294.41 C 777.933 1291.54 778.351 1288.94 779.172 1286.18 C 779.422 1285.32 779.673 1284.46 779.931 1283.58 C 780.201 1282.68 780.472 1281.79 780.75 1280.88 C 781.022 1279.95 781.294 1279.03 781.575 1278.08 C 782.374 1275.38 783.186 1272.69 784 1270 C 784.419 1268.59 784.837 1267.18 785.254 1265.77 C 787.843 1257.16 789.007 1255.652 789.011 1255.487 C 789.011 1255.487 794.948 1240.978 795 1241.001 C 795.351 1239.741 795.701 1238.481 796.063 1237.191 C 800.232 1223.401 805.667 1210.191 811.676 1197.121 C 814.08 1191.871 816.322 1186.571 818.563 1181.251 C 821.458 1174.421 824.514 1167.731 827.897 1161.131 C 831.323 1154.441 834.508 1147.641 837.676 1140.831 C 838.079 1139.971 838.483 1139.111 838.898 1138.231 C 839.435 1137.081 839.435 1137.081 839.982 1135.901 C 841 1134.001 841 1134.001 843 1132.001 C 843.714 1130.341 844.424 1128.691 845.112 1127.021 C 846.721 1123.361 848.724 1119.921 850.688 1116.441 C 851.13 1115.651 851.572 1114.861 852.027 1114.051 C 853.347 1111.701 854.673 1109.351 856 1107.001 C 856.363 1106.361 856.726 1105.711 857.101 1105.051 C 862.238 1095.931 867.557 1086.931 873 1078.001 C 873.357 1077.411 873.714 1076.821 874.083 1076.221 C 890.103 1049.891 907.608 1024.221 926.524 999.906 C 927.911 998.116 929.283 996.318 930.648 994.513 C 935.683 987.871 940.926 981.455 946.344 975.126 C 948.802 972.25 951.187 969.32 953.563 966.376 C 957.442 961.609 961.519 957.059 965.68 952.536 C 967.573 950.468 969.423 948.377 971.25 946.251 C 981.434 934.568 992.317 923.52 1003.29 912.582 C 1005.4 910.478 1007.5 908.369 1009.61 906.259 C 1010.97 904.891 1012.34 903.524 1013.71 902.157 C 1014.33 901.54 1014.94 900.924 1015.57 900.288 C 1019.34 896.547 1023.22 892.994 1027.23 889.53 C 1029.64 887.447 1031.97 885.286 1034.31 883.126 C 1038.8 879.032 1043.41 875.146 1048.14 871.333 C 1050.64 869.296 1053.09 867.218 1055.53 865.116 C 1068.73 853.788 1082.8 843.585 1096.94 833.48 C 1098.79 832.149 1100.63 830.806 1102.47 829.454 C 1112.97 821.772 1123.98 814.894 1135 808.001 C 1135.68 807.575 1136.36 807.149 1137.06 806.709 C 1144.62 801.988 1152.28 797.453 1160 793.001 C 1161.09 792.363 1162.18 791.725 1163.3 791.067 C 1170.17 787.076 1177.12 783.369 1184.25 779.861 C 1188.04 777.996 1191.76 776.065 1195.44 774.001 C 1209.3 766.361 1224.02 760.287 1238.55 754.055 C 1240.49 753.222 1242.42 752.38 1244.36 751.536 C 1262.77 743.635 1282 737.502 1300.95 731.042 C 1302.75 730.426 1304.56 729.806 1306.36 729.177 C 1313.18 726.822 1320.15 725.023 1327.13 723.188 C 1328.47 722.833 1329.82 722.478 1331.17 722.122 C 1333.2 721.586 1335.24 721.049 1337.28 720.514 C 1341.14 719.498 1345 718.457 1348.85 717.392 C 1371.3 711.238 1394.37 706.543 1417.46 703.606 C 1420.71 703.194 1423.91 702.678 1427.13 702.114 C 1437.02 700.442 1446.99 699.25 1456.94 698.001 C 1458.01 697.867 1459.07 697.733 1460.17 697.594 C 1477.1 695.484 1493.95 693.743 1511 693.001 C 1511.86 692.96 1512.73 692.92 1513.62 692.878 C 1530.17 692.108 1546.7 691.843 1563.28 691.871 L 1563.28 691.87 Z" fill="url(#dirtGrad)" />
-    <path id="grassShape" d="M 0 0 C 0.804 1.268 0.804 1.268 1.625 2.563 C 7.858 12.183 19.424 18.429 30.313 21.438 C 47.351 24.261 62.825 21.03 77 11 C 80.868 7.654 84.162 4.257 87 0 C 88.813 0.188 88.813 0.188 91 1 C 92.026 2.651 538.531 450.379 541.875 453.375 C 555.899 465.983 555.899 465.983 559 473 C 558.576 473.415 558.152 473.83 557.715 474.258 C 547.414 485.079 542.51 498.534 542.498 513.305 C 542.871 528.096 548.522 541.522 559 552 C 558.672 555.365 557.323 557.053 554.983 559.396 C 554.334 560.053 108.392 1006.357 107.812 1006.937 C 106 1008 106 1008 103.481 1007.748 C 100.268 1006.779 97.176 1005.557 94.063 1004.313 C 87.332 1001.709 71.741 997.179 70.803 996.917 C 44.108 989.749 13.836 993.44 -11.148 1004.483 C -12.39 1005.012 -15.137 1006.204 -15.9 1006.54 C -18.68 1007.149 -19.578 1006.426 -22 1005 C -23.683 1003.569 -470.365 557.259 -470.943 556.682 C -472 555 -472 555 -471.768 552.912 C -470.789 550.473 -469.42 548.975 -467.625 547.063 C -464.994 544.184 -462.993 541.357 -461 538 C -460.34 538 -457.115 531.744 -456.852 530.871 C -456.571 529.924 -455.288 525.863 -454.922 524.762 C -451.716 511.68 -453.111 496.623 -459.754 484.906 C -460.938 483.028 -468.98 473 -470 473 C -470.68 471.219 -470.68 471.219 -471 469 C -469.892 467.268 -469.892 467.268 -468.119 465.496 C -467.45 464.815 -4.086 1.834 -3.484 1.232 C -2 0 -2 0 0 0 Z" fill="#3B7438" transform="translate(1526,888)" />
-    <g clip-path="url(#grassClip)">
-      <rect x="960" y="650" width="110" height="1700" fill="#3b7438"/><rect x="1070" y="650" width="110" height="1700" fill="#234B28"/>
-      <rect x="1180" y="650" width="110" height="1700" fill="#3b7438"/><rect x="1290" y="650" width="110" height="1700" fill="#234B28"/>
-      <rect x="1400" y="650" width="110" height="1700" fill="#3b7438"/><rect x="1510" y="650" width="110" height="1700" fill="#234B28"/>
-      <rect x="1620" y="650" width="110" height="1700" fill="#3b7438"/><rect x="1730" y="650" width="110" height="1700" fill="#234B28"/>
-      <rect x="1840" y="650" width="110" height="1700" fill="#3b7438"/><rect x="1950" y="650" width="110" height="1700" fill="#234B28"/>
-      <rect x="2060" y="650" width="110" height="1700" fill="#3b7438"/>
-    </g>
-    <ellipse cx="1568.7" cy="1380.28" rx="93.972" ry="93.974" fill="url(#moundGrad)" stroke="#A26C39" stroke-width="1" stroke-opacity="0.35" filter="url(#baseShadow)" />
-    <rect x="668.566" y="533.307" width="1783.884" height="1690.543" fill="url(#outfieldFade)"/>
+    ${FIELD_DIRT_PATH}
+    ${FIELD_GRASS_MOUND_SHARED}
     <polyline points="2452.3 1133.03 1568.43 2016.70" fill="none" stroke="#FCFBF7" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
     <polyline points="666.265 1121.42 1564.70 2015.00" fill="none" stroke="#FCFBF7" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
     <rect x="1535" y="1369" width="66" height="24" fill="#FFFFFF" />
     <polygon points="1533.003 1950.071 1603.083 1949.953 1604.166 1987.53 1567.187 2023.907 1532.723 1989.805" fill="#F7F5EF" stroke="#D7D1C5" stroke-width="1.5" filter="url(#baseShadow)" />`;
-}
 function fieldBaseRect(n, isOccupied, onclickAttr){
   const cx = FIELD_BASE[n].x, cy = FIELD_BASE[n].y;
   const s = isOccupied ? 53.725*2 : 53.725; // doubles in size when occupied, per approved mockup
@@ -2301,50 +2322,18 @@ function fieldPitcherLabel(){
 }
 // Static infield background art for the Live-tab compact diamond — verbatim from the V10 asset (dirt
 // fan, grass-stripe clip group, mound, rubber, home plate), minus its 3 static base squares.
-function fieldInfieldBackgroundSVG(){
-  return `
-    <defs>
-      <filter id="baseShadow" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.12"/>
-      </filter>
-      <linearGradient id="dirtGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#B9864A"/><stop offset="100%" stop-color="#9F6B37"/>
-      </linearGradient>
-      <radialGradient id="moundGrad" cx="50%" cy="42%" r="60%">
-        <stop offset="0%" stop-color="#C79458"/><stop offset="65%" stop-color="#B27A42"/><stop offset="100%" stop-color="#A26C39"/>
-      </radialGradient>
-      <clipPath id="grassClip"><use href="#grassShape"/></clipPath>
-      <linearGradient id="outfieldFade" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0"/>
-        <stop offset="82%" stop-color="#FFFFFF" stop-opacity="0"/>
-        <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.22"/>
-      </linearGradient>
+const FIELD_INFIELD_BACKGROUND_SVG = `
+    <defs>${FIELD_DEFS_SHARED}
       <clipPath id="compactFieldClip"><rect x="770" y="740" width="1592" height="1370"/></clipPath>
     </defs>
     <g clip-path="url(#compactFieldClip)">
     <g transform="translate(0 55)">
-      <path d="M 1563.28 691.87 C 1567.13 691.875 1570.98 691.87 1574.83 691.863 C 1586.69 691.86 1598.53 691.965 1610.38 692.449 C 1611.34 692.488 1612.3 692.528 1613.3 692.568 C 1619.83 692.869 1626.21 693.563 1632.68 694.473 C 1638.08 695.185 1643.51 695.498 1648.94 695.875 C 1671.89 697.558 1694.54 700.582 1717.19 704.562 C 1718.03 704.71 1718.87 704.858 1719.73 705.01 C 1735.83 707.855 1751.71 711.332 1767.56 715.312 C 1768.35 715.51 1769.14 715.707 1769.95 715.91 C 1786.47 720.056 1802.89 724.425 1819 730 C 1820.42 730.471 1821.85 730.941 1823.27 731.41 C 1827.84 732.931 1832.36 734.571 1836.88 736.25 C 1838.53 736.863 1840.19 737.477 1841.84 738.09 C 1842.69 738.403 1843.53 738.716 1844.4 739.039 C 1847.03 740.01 1849.65 740.977 1852.28 741.941 C 1853.13 742.255 1853.99 742.569 1854.87 742.892 C 1856.5 743.492 1858.13 744.091 1859.77 744.69 C 1865.77 746.897 1871.6 749.25 1877.38 752 C 1883.04 754.678 1888.75 757.198 1894.51 759.659 C 1903.37 763.45 1912.01 767.395 1920.44 772.059 C 1924.98 774.565 1929.63 776.842 1934.29 779.124 C 1939.28 781.59 1944.14 784.272 1949 787 C 1950.79 787.994 1952.59 788.987 1954.38 789.98 C 1964.26 795.482 1973.95 801.075 1983.27 807.477 C 1987.59 810.437 1992.05 813.172 1996.5 815.937 C 2004.36 820.848 2011.83 826.126 2019.23 831.688 C 2022.14 833.845 2025.1 835.916 2028.06 838 C 2034.71 842.711 2041.11 847.721 2047.48 852.798 C 2049.49 854.389 2051.53 855.944 2053.56 857.5 C 2061.57 863.711 2069.22 870.389 2076.81 877.094 C 2079.08 879.072 2081.39 881.012 2083.69 882.954 C 2089.51 887.889 2095.19 892.956 2100.75 898.191 C 2101.47 898.876 2102.2 899.562 2102.95 900.267 C 2111.15 908.036 2119.16 916.004 2127.13 924.003 C 2129.65 926.529 2132.18 929.05 2134.71 931.57 C 2136.34 933.203 2137.97 934.836 2139.6 936.469 C 2140.34 937.208 2141.09 937.948 2141.85 938.71 C 2145.89 942.774 2149.78 946.928 2153.51 951.276 C 2155.58 953.673 2157.73 955.989 2159.88 958.312 C 2163.94 962.773 2167.8 967.356 2171.59 972.055 C 2173.83 974.793 2176.13 977.474 2178.45 980.148 C 2183.48 985.946 2188.22 991.852 2192.77 998.047 C 2195.94 1002.24 2199.32 1006.22 2202.74 1010.21 C 2205.03 1013.04 2206.99 1015.96 2209 1019 C 2210.82 1021.48 2212.7 1023.93 2214.56 1026.38 C 2220.22 1033.86 2225.57 1041.53 2230.84 1049.3 C 2232.34 1051.49 2233.89 1053.65 2235.44 1055.81 C 2239.38 1061.41 2242.97 1067.25 2246.6 1073.05 C 2249.13 1077.08 2251.68 1081.04 2254.5 1084.88 C 2258.69 1090.69 2262.08 1097 2265.56 1103.25 C 2267.92 1107.46 2270.34 1111.57 2273.06 1115.56 C 2276.08 1120.01 2278.56 1124.65 2281 1129.44 C 2284.87 1136.92 2284.87 1136.92 2289.13 1144.19 C 2291.86 1148.63 2294.18 1153.25 2296.48 1157.93 C 2299.26 1163.59 2302.17 1169.17 2305.1 1174.75 C 2311.52 1186.98 2317.59 1199.29 2323 1212 C 2323.41 1212.94 2323.82 1213.88 2324.23 1214.85 C 2325 1217 2326.32 1220 2327 1220 C 2329.97 1227.26 2332.94 1234.52 2336 1242 C 2336.018 1242 2336.036 1242 2336.054 1242 L 2340.958 1255.816 C 2340.955 1255.834 2340.953 1255.852 2340.95 1255.87 C 2341.165 1256.506 2341.389 1257.11 2341.624 1257.692 C 2342.528 1259.926 2343.604 1261.834 2345 1264 C 2346.64 1268.11 2348.07 1272.3 2349.5 1276.49 C 2350.19 1278.5 2350.89 1280.5 2351.59 1282.5 C 2352.03 1283.78 2352.48 1285.06 2352.92 1286.34 C 2353.32 1287.5 2353.72 1288.66 2354.13 1289.85 C 2354.93 1292.76 2355.19 1295.01 2355 1298 C 2354.34 1298 1700.18 1963.82 1699 1965 C 1699.43 1969.18 1701 1973.06 1702.38 1977 C 1713.04 2008.24 1713.53 2049.9 1698.91 2080.26 C 1698.61 2080.83 1696.38 2085.265 1696.29 2085.955 C 1687.195 2111.855 1660.88 2133.39 1638.98 2146.86 C 1627.95 2153.13 1601.57 2161.72 1600.32 2162.1 C 1566.54 2172.06 1530.08 2165.18 1499.41 2148.9 C 1495.08 2146.49 1485.24 2139.77 1484.33 2139.13 C 1475.18 2132.64 1459.13 2115.98 1458.67 2115.46 C 1450.24 2105.64 1436.68 2080 1436 2080 C 1431.23 2069.29 1426.76 2045.6 1426.64 2044.88 C 1422.72 2021.33 1424.4 1993.35 1434.21 1971.27 C 1435.18 1968.48 1435.09 1967.73 1434 1965 C 1432.25 1963.01 785.398 1306.01 783.59 1304.24 C 782.746 1303.45 782.746 1303.45 781.886 1302.65 C 779.105 1299.89 778.041 1298.35 777.577 1294.41 C 777.933 1291.54 778.351 1288.94 779.172 1286.18 C 779.422 1285.32 779.673 1284.46 779.931 1283.58 C 780.201 1282.68 780.472 1281.79 780.75 1280.88 C 781.022 1279.95 781.294 1279.03 781.575 1278.08 C 782.374 1275.38 783.186 1272.69 784 1270 C 784.419 1268.59 784.837 1267.18 785.254 1265.77 C 787.843 1257.16 789.007 1255.652 789.011 1255.487 C 789.011 1255.487 794.948 1240.978 795 1241.001 C 795.351 1239.741 795.701 1238.481 796.063 1237.191 C 800.232 1223.401 805.667 1210.191 811.676 1197.121 C 814.08 1191.871 816.322 1186.571 818.563 1181.251 C 821.458 1174.421 824.514 1167.731 827.897 1161.131 C 831.323 1154.441 834.508 1147.641 837.676 1140.831 C 838.079 1139.971 838.483 1139.111 838.898 1138.231 C 839.435 1137.081 839.435 1137.081 839.982 1135.901 C 841 1134.001 841 1134.001 843 1132.001 C 843.714 1130.341 844.424 1128.691 845.112 1127.021 C 846.721 1123.361 848.724 1119.921 850.688 1116.441 C 851.13 1115.651 851.572 1114.861 852.027 1114.051 C 853.347 1111.701 854.673 1109.351 856 1107.001 C 856.363 1106.361 856.726 1105.711 857.101 1105.051 C 862.238 1095.931 867.557 1086.931 873 1078.001 C 873.357 1077.411 873.714 1076.821 874.083 1076.221 C 890.103 1049.891 907.608 1024.221 926.524 999.906 C 927.911 998.116 929.283 996.318 930.648 994.513 C 935.683 987.871 940.926 981.455 946.344 975.126 C 948.802 972.25 951.187 969.32 953.563 966.376 C 957.442 961.609 961.519 957.059 965.68 952.536 C 967.573 950.468 969.423 948.377 971.25 946.251 C 981.434 934.568 992.317 923.52 1003.29 912.582 C 1005.4 910.478 1007.5 908.369 1009.61 906.259 C 1010.97 904.891 1012.34 903.524 1013.71 902.157 C 1014.33 901.54 1014.94 900.924 1015.57 900.288 C 1019.34 896.547 1023.22 892.994 1027.23 889.53 C 1029.64 887.447 1031.97 885.286 1034.31 883.126 C 1038.8 879.032 1043.41 875.146 1048.14 871.333 C 1050.64 869.296 1053.09 867.218 1055.53 865.116 C 1068.73 853.788 1082.8 843.585 1096.94 833.48 C 1098.79 832.149 1100.63 830.806 1102.47 829.454 C 1112.97 821.772 1123.98 814.894 1135 808.001 C 1135.68 807.575 1136.36 807.149 1137.06 806.709 C 1144.62 801.988 1152.28 797.453 1160 793.001 C 1161.09 792.363 1162.18 791.725 1163.3 791.067 C 1170.17 787.076 1177.12 783.369 1184.25 779.861 C 1188.04 777.996 1191.76 776.065 1195.44 774.001 C 1209.3 766.361 1224.02 760.287 1238.55 754.055 C 1240.49 753.222 1242.42 752.38 1244.36 751.536 C 1262.77 743.635 1282 737.502 1300.95 731.042 C 1302.75 730.426 1304.56 729.806 1306.36 729.177 C 1313.18 726.822 1320.15 725.023 1327.13 723.188 C 1328.47 722.833 1329.82 722.478 1331.17 722.122 C 1333.2 721.586 1335.24 721.049 1337.28 720.514 C 1341.14 719.498 1345 718.457 1348.85 717.392 C 1371.3 711.238 1394.37 706.543 1417.46 703.606 C 1420.71 703.194 1423.91 702.678 1427.13 702.114 C 1437.02 700.442 1446.99 699.25 1456.94 698.001 C 1458.01 697.867 1459.07 697.733 1460.17 697.594 C 1477.1 695.484 1493.95 693.743 1511 693.001 C 1511.86 692.96 1512.73 692.92 1513.62 692.878 C 1530.17 692.108 1546.7 691.843 1563.28 691.871 L 1563.28 691.87 Z" fill="url(#dirtGrad)" />
-      <path id="grassShape" d="M 0 0 C 0.804 1.268 0.804 1.268 1.625 2.563 C 7.858 12.183 19.424 18.429 30.313 21.438 C 47.351 24.261 62.825 21.03 77 11 C 80.868 7.654 84.162 4.257 87 0 C 88.813 0.188 88.813 0.188 91 1 C 92.026 2.651 538.531 450.379 541.875 453.375 C 555.899 465.983 555.899 465.983 559 473 C 558.576 473.415 558.152 473.83 557.715 474.258 C 547.414 485.079 542.51 498.534 542.498 513.305 C 542.871 528.096 548.522 541.522 559 552 C 558.672 555.365 557.323 557.053 554.983 559.396 C 554.334 560.053 108.392 1006.357 107.812 1006.937 C 106 1008 106 1008 103.481 1007.748 C 100.268 1006.779 97.176 1005.557 94.063 1004.313 C 87.332 1001.709 71.741 997.179 70.803 996.917 C 44.108 989.749 13.836 993.44 -11.148 1004.483 C -12.39 1005.012 -15.137 1006.204 -15.9 1006.54 C -18.68 1007.149 -19.578 1006.426 -22 1005 C -23.683 1003.569 -470.365 557.259 -470.943 556.682 C -472 555 -472 555 -471.768 552.912 C -470.789 550.473 -469.42 548.975 -467.625 547.063 C -464.994 544.184 -462.993 541.357 -461 538 C -460.34 538 -457.115 531.744 -456.852 530.871 C -456.571 529.924 -455.288 525.863 -454.922 524.762 C -451.716 511.68 -453.111 496.623 -459.754 484.906 C -460.938 483.028 -468.98 473 -470 473 C -470.68 471.219 -470.68 471.219 -471 469 C -469.892 467.268 -469.892 467.268 -468.119 465.496 C -467.45 464.815 -4.086 1.834 -3.484 1.232 C -2 0 -2 0 0 0 Z" fill="#3B7438" transform="translate(1526,888)" />
-      <g clip-path="url(#grassClip)">
-        <rect x="960"  y="650" width="110" height="1700" fill="#3b7438"/>
-        <rect x="1070" y="650" width="110" height="1700" fill="#234B28"/>
-        <rect x="1180" y="650" width="110" height="1700" fill="#3b7438"/>
-        <rect x="1290" y="650" width="110" height="1700" fill="#234B28"/>
-        <rect x="1400" y="650" width="110" height="1700" fill="#3b7438"/>
-        <rect x="1510" y="650" width="110" height="1700" fill="#234B28"/>
-        <rect x="1620" y="650" width="110" height="1700" fill="#3b7438"/>
-        <rect x="1730" y="650" width="110" height="1700" fill="#234B28"/>
-        <rect x="1840" y="650" width="110" height="1700" fill="#3b7438"/>
-        <rect x="1950" y="650" width="110" height="1700" fill="#234B28"/>
-        <rect x="2060" y="650" width="110" height="1700" fill="#3b7438"/>
-      </g>
-      <ellipse cx="1568.7" cy="1380.28" rx="93.972" ry="93.974" fill="url(#moundGrad)" stroke="#A26C39" stroke-width="1" stroke-opacity="0.35" filter="url(#baseShadow)" />
-      <rect x="668.566" y="533.307" width="1783.884" height="1690.543" fill="url(#outfieldFade)"/>
+      ${FIELD_DIRT_PATH}
+      ${FIELD_GRASS_MOUND_SHARED}
       <path d="M 1002.379 1448.241 C 1002.737 1448.576 1003.09 1448.919 1003.441 1449.268 L 1002.379 1448.241 Z" fill="#F6F4EE" />
       <path d="M0 0 C21.78 0 43.56 0 66 0 C66 7.92 66 15.84 66 24 C44.22 24 22.44 24 0 24 C0 16.08 0 8.16 0 0 Z " fill="#FFFFFF" transform="translate(1535,1369)" />
       <polygon points="1533.003 1950.071 1603.083 1949.953 1604.166 1987.53 1567.187 2023.907 1532.723 1989.805" fill="#F7F5EF" stroke="#D7D1C5" stroke-width="1.5" filter="url(#baseShadow)" />
     </g></g>`;
-}
 function renderDiamond(){
   const key = battingKey();
   const b1 = state.bases[1], b2 = state.bases[2], b3 = state.bases[3];
@@ -2357,7 +2346,7 @@ function renderDiamond(){
   <div class="diamond-wrap compact">
     <div class="diamond-inner">
       <svg viewBox="${FIELD_VIEWBOX_COMPACT}">
-        ${fieldInfieldBackgroundSVG()}
+        ${FIELD_INFIELD_BACKGROUND_SVG}
         <g transform="translate(0 55)">
           ${fieldPitcherLabel()}
           ${fieldBaseRect(2, !!b2, 'openRunnerSheet(2)')}
@@ -2476,7 +2465,7 @@ function renderBox(){
   }
   return `
   ${state.gameOver? renderGameOverBanner(false) : ''}
-  <button class="btn clay block" onclick="exportCSV()">${t('btn_export_csv')}</button>
+  <button class="btn clay block" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;" onclick="exportCSV()">${CSV_ICON}<span>${t('btn_export_csv')}</span></button>
   ${teamBlock('us')}
   ${teamBlock('them')}
   <h2 class="section-title">${t('hdr_play_log')}</h2>
@@ -2524,8 +2513,8 @@ function renderScorebookGrid(){
   return `
   <div class="card grid-print-hide" style="padding:11px 12px;">
     <div class="row">
-      <button class="btn ghost small" onclick="printScorebook()">${t('btn_print_pdf')}</button>
-      <button class="btn ghost small" onclick="exportScorebookImage()">${t('btn_export_img')}</button>
+      <button class="btn ghost small" style="display:inline-flex;align-items:center;justify-content:center;gap:5px;" onclick="printScorebook()">${PDF_ICON}<span>${t('btn_print_pdf')}</span></button>
+      <button class="btn ghost small" style="display:inline-flex;align-items:center;justify-content:center;gap:5px;" onclick="exportScorebookImage()">${IMAGE_ICON}<span>${t('btn_export_img')}</span></button>
     </div>
   </div>
   <div class="teamtabs">
@@ -2855,7 +2844,7 @@ function renderPreviewDiamond(s){
   return `
   <div class="diamond-wrap sm">
     <svg viewBox="${FIELD_VIEWBOX}">
-      ${fieldBackgroundSVG()}
+      ${FIELD_BACKGROUND_SVG}
       ${fieldBaseRect(2, !!bases[2])}
       ${fieldBaseRect(1, !!bases[1])}
       ${fieldBaseRect(3, !!bases[3])}
@@ -2898,6 +2887,37 @@ function renderFielderTapRow(seq, tapFnName){
   </div>`;
 }
 
+// Shared runner-row markup for the OUT_PLAY sheet and the generic hit-confirmation sheet — both offer
+// the same stay/advance1/advance2/score/out choices, out-target picker, and fielder-tap row for a
+// runner. showDpToggle is the one real difference between the two: OUT_PLAY derives DP automatically
+// from outOrder.length>=2 (see deriveOutPlayKind), so it has no manual DP control; the generic hit sheet
+// has no such derivation (a hit normally puts the batter on base, not out), so it exposes a manual DP
+// tag on the runner's own fielded-row instead.
+function renderRunnerRow(r, s, showDpToggle){
+  const idx = s.outOrder.indexOf(r.base);
+  const badge = idx>=0 ? `<div class="out-badge ${s.swapSelect===r.base?'sel':''}" onclick="outPlayTapBadge(${r.base})">${idx+1}</div>` : '';
+  return `
+  <div class="runner-row">
+    <div class="rname" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>${battingOrderNum(battingKey(),r.id)?battingOrderNum(battingKey(),r.id)+'. ':''}${r.name} (on ${r.base===1?'1st':r.base===2?'2nd':'3rd'})</span>${badge}
+    </div>
+    <div class="opt-row">
+      <button class="opt-btn ${r.choice==='stay'?'sel':''}" onclick="sheetChoose(${r.base},'stay')">Stays</button>
+      <button class="opt-btn ${r.choice==='advance1'?'sel':''}" onclick="sheetChoose(${r.base},'advance1')">+1 base</button>
+      <button class="opt-btn ${r.choice==='advance2'?'sel':''}" onclick="sheetChoose(${r.base},'advance2')">+2 bases</button>
+      <button class="opt-btn ${r.choice==='score'?'sel':''}" onclick="sheetChoose(${r.base},'score')">Scores</button>
+      <button class="opt-btn ${r.choice==='out'?'sel':''}" onclick="sheetChoose(${r.base},'out')">Out</button>
+    </div>
+    ${r.choice==='out' ? `
+    <div class="sub" style="font-size:11px;color:#8C8570;margin:6px 0 4px;">Out trying for:</div>
+    <div class="opt-row">${outTargetOptions(r.base).map(tb=>`<button class="opt-btn ${r.outTarget===tb.v?'sel':''}" onclick="sheetChoose(${r.base},'out',${tb.v})">${tb.label}</button>`).join('')}</div>
+    <div class="sub" style="font-size:11px;color:#8C8570;margin:8px 0 4px;">Fielders involved (optional):</div>
+    <div class="fielded-row">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="sheetOutFieldTap(${r.base},${n})">${n}</button>`).join('')}${showDpToggle?`<button class="dp-toggle ${r.outPrefix==='DP'?'sel':''}" onclick="sheetToggleRunnerPrefix(${r.base},'DP')">DP</button>`:''}</div>
+    <div style="text-align:center;font-family:ui-monospace,monospace;font-weight:800;font-size:14px;color:var(--field);min-height:18px;margin:4px 0;">${(r.outFieldSeq||[]).join('-')}</div>
+    <button class="btn ghost small" onclick="sheetOutFieldUndo(${r.base})" style="margin:2px auto 4px;display:block;">↺ Undo Fielder</button>
+    ` : ''}
+  </div>`;
+}
 function renderSheet(){
   const s = state.sheet;
   if(!s) return '';
@@ -3118,31 +3138,7 @@ function renderSheet(){
         ` : ''}
       </div>`;
 
-    const runnerSections = s.runners.map(r=>{
-      const idx = s.outOrder.indexOf(r.base);
-      const badge = idx>=0 ? `<div class="out-badge ${s.swapSelect===r.base?'sel':''}" onclick="outPlayTapBadge(${r.base})">${idx+1}</div>` : '';
-      return `
-      <div class="runner-row">
-        <div class="rname" style="display:flex;justify-content:space-between;align-items:center;">
-          <span>#${r.num} ${r.name} (on ${r.base===1?'1st':r.base===2?'2nd':'3rd'})</span>${badge}
-        </div>
-        <div class="opt-row">
-          <button class="opt-btn ${r.choice==='stay'?'sel':''}" onclick="sheetChoose(${r.base},'stay')">Stays</button>
-          <button class="opt-btn ${r.choice==='advance1'?'sel':''}" onclick="sheetChoose(${r.base},'advance1')">+1 base</button>
-          <button class="opt-btn ${r.choice==='advance2'?'sel':''}" onclick="sheetChoose(${r.base},'advance2')">+2 bases</button>
-          <button class="opt-btn ${r.choice==='score'?'sel':''}" onclick="sheetChoose(${r.base},'score')">Scores</button>
-          <button class="opt-btn ${r.choice==='out'?'sel':''}" onclick="sheetChoose(${r.base},'out')">Out</button>
-        </div>
-        ${r.choice==='out' ? `
-        <div class="sub" style="font-size:11px;color:#8C8570;margin:6px 0 4px;">Out trying for:</div>
-        <div class="opt-row">${outTargetOptions(r.base).map(tb=>`<button class="opt-btn ${r.outTarget===tb.v?'sel':''}" onclick="sheetChoose(${r.base},'out',${tb.v})">${tb.label}</button>`).join('')}</div>
-        <div class="sub" style="font-size:11px;color:#8C8570;margin:8px 0 4px;">Fielders involved (optional):</div>
-        <div class="fielded-row">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="sheetOutFieldTap(${r.base},${n})">${n}</button>`).join('')}</div>
-        <div style="text-align:center;font-family:ui-monospace,monospace;font-weight:800;font-size:14px;color:var(--field);min-height:18px;margin:4px 0;">${(r.outFieldSeq||[]).join('-')}</div>
-        <button class="btn ghost small" onclick="sheetOutFieldUndo(${r.base})" style="margin:2px auto 4px;display:block;">↺ Undo Fielder</button>
-        ` : ''}
-      </div>`;
-    }).join('');
+    const runnerSections = s.runners.map(r=>renderRunnerRow(r, s, false)).join('');
 
     return `
     <div class="sheet-backdrop"></div>
@@ -3219,31 +3215,7 @@ function renderSheet(){
     ${willBeFC ? `<div class="result-banner ok">A runner is out on this play — recorded as: <b>Fielder's Choice</b> (no hit credited)</div>` : ''}
     ${collisions.length ? `<div class="result-banner warn">${collisions.join('; ')} — fix before confirming.</div>` : ''}
     ${s.outOrder.length>=2 ? `<div style="text-align:center;font-size:11px;color:#8C8570;margin:4px 0 8px;white-space:nowrap;">Tap <span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--clay);color:#fff;font-size:9px;font-weight:900;vertical-align:-2px;">×</span> to swap out sequence</div>` : ''}
-    ${s.runners.map(r=>{
-      const idx = s.outOrder.indexOf(r.base);
-      const badge = idx>=0 ? `<div class="out-badge ${s.swapSelect===r.base?'sel':''}" onclick="outPlayTapBadge(${r.base})">${idx+1}</div>` : '';
-      return `
-      <div class="runner-row">
-        <div class="rname" style="display:flex;justify-content:space-between;align-items:center;">
-          <span>#${r.num} ${r.name} (on ${r.base===1?'1st':r.base===2?'2nd':'3rd'})</span>${badge}
-        </div>
-        <div class="opt-row">
-          <button class="opt-btn ${r.choice==='stay'?'sel':''}" onclick="sheetChoose(${r.base},'stay')">Stays</button>
-          <button class="opt-btn ${r.choice==='advance1'?'sel':''}" onclick="sheetChoose(${r.base},'advance1')">+1 base</button>
-          <button class="opt-btn ${r.choice==='advance2'?'sel':''}" onclick="sheetChoose(${r.base},'advance2')">+2 bases</button>
-          <button class="opt-btn ${r.choice==='score'?'sel':''}" onclick="sheetChoose(${r.base},'score')">Scores</button>
-          <button class="opt-btn ${r.choice==='out'?'sel':''}" onclick="sheetChoose(${r.base},'out')">Out</button>
-        </div>
-        ${r.choice==='out' ? `
-        <div class="sub" style="font-size:11px;color:#8C8570;margin:6px 0 4px;">Out trying for:</div>
-        <div class="opt-row">${outTargetOptions(r.base).map(tb=>`<button class="opt-btn ${r.outTarget===tb.v?'sel':''}" onclick="sheetChoose(${r.base},'out',${tb.v})">${tb.label}</button>`).join('')}</div>
-        <div class="sub" style="font-size:11px;color:#8C8570;margin:8px 0 4px;">Fielders involved (optional):</div>
-        <div class="fielded-row">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="sheetOutFieldTap(${r.base},${n})">${n}</button>`).join('')}<button class="dp-toggle ${r.outPrefix==='DP'?'sel':''}" onclick="sheetToggleRunnerPrefix(${r.base},'DP')">DP</button></div>
-        <div style="text-align:center;font-family:ui-monospace,monospace;font-weight:800;font-size:14px;color:var(--field);min-height:18px;margin:4px 0;">${(r.outFieldSeq||[]).join('-')}</div>
-        <button class="btn ghost small" onclick="sheetOutFieldUndo(${r.base})" style="margin:2px auto 4px;display:block;">↺ Undo Fielder</button>
-        ` : ''}
-      </div>
-    `;}).join('')}
+    ${s.runners.map(r=>renderRunnerRow(r, s, true)).join('')}
     <button class="btn block" ${collisions.length?'disabled':''} onclick="confirmSheet()">Confirm Play</button>
   </div>`;
 }
