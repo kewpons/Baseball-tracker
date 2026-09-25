@@ -390,7 +390,9 @@ const STRINGS = {
     hdr_batting_order:'Batting Order', hdr_bench:'Bench',
     lineup_empty:'Drag or add a player here to build the batting order', bench_empty:'No bench players',
     ocr_tip:"Tip: Take a photo of the batting order, copy jersey numbers and names using your phone's built-in text recognition, and paste into Text here.",
-    rosters_from_rows_note:'Rosters will be created based on rows in Batting Order and Bench, including empty rows.',
+    rosters_from_rows_note:'Rosters will be created based on rows in Batting Order and Bench, including empty rows. Jersey and names are optional.',
+    roster_editable_note:'You can still edit the Roster after game is started.',
+    quick_start_note:'<b>Quick Start</b>: Set the number of batters for each team and press Start Game.',
     scan_crop_title:'Crop & Straighten', scan_crop_hint:'Drag on the photo to crop tightly around the names — this makes recognition far more accurate.|Rotate or nudge the tilt if the photo is angled.',
     btn_rotate_left:'Rotate Left', btn_rotate_right:'Rotate Right', lbl_fine_tilt:'Fine tilt correction',
     btn_apply_crop:'Apply Crop', btn_reset_crop:'Reset', btn_continue_scan:'Continue',
@@ -433,7 +435,9 @@ const STRINGS = {
     hdr_batting_order:'打順', hdr_bench:'ベンチ',
     lineup_empty:'ここに選手をドラッグ、または追加して打順を作成', bench_empty:'ベンチの選手はいません',
     ocr_tip:'ヒント：打順表を撮影し、スマートフォン内蔵の文字認識機能で背番号と名前をコピーして、ここの「テキスト」に貼り付けてください。',
-    rosters_from_rows_note:'名簿は打順とベンチの行数（空欄も含む）に基づいて作成されます。',
+    rosters_from_rows_note:'名簿は打順とベンチの行数（空欄も含む）に基づいて作成されます。背番号と名前は省略できます。',
+    roster_editable_note:'試合開始後も名簿は編集できます。',
+    quick_start_note:'<b>クイックスタート</b>：各チームの打者数を設定して「試合開始」を押してください。',
     scan_crop_title:'切り抜き・傾き補正', scan_crop_hint:'名前の部分だけを囲むようにドラッグして切り抜くと、認識精度が大きく上がります。|写真が傾いている場合は回転・微調整してください。',
     btn_rotate_left:'左に回転', btn_rotate_right:'右に回転', lbl_fine_tilt:'傾きの微調整',
     btn_apply_crop:'切り抜きを適用', btn_reset_crop:'リセット', btn_continue_scan:'続ける',
@@ -1610,7 +1614,7 @@ function renderRosterBody(tm){
       <div id="pastePreview" class="paste-preview" style="display:none;"></div>
     </div>
   ` : '';
-  const rosterNote = !state.gameStarted ? `<div style="font-size:11px;color:#8a8373;margin:10px 0 4px;">${t('ocr_tip')}</div><div style="font-size:11px;color:#8a8373;margin:0 0 12px;">${t('rosters_from_rows_note')}</div>` : '';
+  const rosterNote = !state.gameStarted ? `<div style="font-size:11px;color:#8a8373;margin:10px 0 4px;">${t('ocr_tip')}</div><div style="font-size:11px;color:#8a8373;margin:0 0 4px;">${t('rosters_from_rows_note')}</div><div style="font-size:11px;color:#8a8373;margin:0 0 4px;">${t('roster_editable_note')}</div><div style="font-size:11px;color:#8a8373;margin:0 0 12px;">${t('quick_start_note')}</div>` : '';
   return `
     ${importRow}
     ${rosterNote}
@@ -1650,7 +1654,7 @@ function pgRowHTML(p, slotNum, group){
     <div class="pg-row" data-id="${p.id}" data-group="${group}">
       <div class="pg-grip" data-pg-handle>${GRIP_ICON}</div>
       <input class="pg-num" type="text" placeholder="#" value="${p.num}" maxlength="3" oninput="updateRosterField('${p.id}','num',this.value)">
-      <input class="pg-name" type="text" placeholder="Name" value="${p.name}" oninput="updateRosterField('${p.id}','name',this.value)">
+      <input class="pg-name" type="text" placeholder="Name (optional)" value="${p.name}" oninput="updateRosterField('${p.id}','name',this.value)">
       ${actionBtn}
     </div>
   </div>`;
