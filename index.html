@@ -25,12 +25,24 @@
     --shadow: 0 1px 2px rgba(28,38,33,0.06), 0 4px 14px rgba(28,38,33,0.06);
   }
   *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html,body{ margin:0; padding:0; background:var(--paper); color:var(--ink);
+  html{ height:100%; }
+  body{ margin:0; padding:0; background:var(--paper); color:var(--ink);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    height:100%; overflow-x:hidden; -webkit-font-smoothing:antialiased;
+    -webkit-font-smoothing:antialiased;
   }
   .mono{ font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
   #app{ display:flex; flex-direction:column; min-height:100vh; }
+  /* Scroll lock — setup screen only (toggled in render() via state.gameStarted). Keeps the document
+     itself from scrolling so Chrome's dynamic address bar can't animate mid-tap and drop/misroute
+     clicks (root cause of dead Start Game / team-batting taps). Lifted once the game starts, where
+     the extra vertical space from address-bar collapse matters more than this protection. */
+  html.scroll-locked{ overflow:hidden; }
+  html.scroll-locked body{ position:fixed; inset:0; overflow:hidden; }
+  html.scroll-locked #app{ height:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  /* Shared clearance so the last row of content isn't hidden behind fixed UI (post-game tabbar/
+     quickbar) or the OS on-screen nav bar (pre-game setup screen, scroll-locked). One value, two uses. */
+  :root{ --bottom-clearance: 82px; }
+  .screen.setup-pad{ padding-bottom: var(--bottom-clearance); }
 
   .scoreboard{ background: linear-gradient(155deg, var(--field) 0%, #0E2A1F 100%); color: var(--paper); padding: 6px 14px 7px; position: sticky; top:0; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,0.28); }
   .linescore{ width:100%; border-collapse:collapse; font-size:12px; }
@@ -56,7 +68,7 @@
   .tab.active{ color:var(--amber-2); border-top:2px solid var(--amber); }
 
   .screen{ flex:1; padding: 16px 14px 14px; }
-  .screen.with-tabbar{ padding-bottom: 82px; }
+  .screen.with-tabbar{ padding-bottom: var(--bottom-clearance); }
   h2.section-title{ font-size:11.5px; text-transform:uppercase; letter-spacing:0.12em; color:#8C8570; font-weight:700; margin: 20px 0 9px; }
   h2.section-title:first-child{ margin-top:0; }
   .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:15px; margin-bottom:12px; box-shadow:var(--shadow); }
@@ -274,6 +286,8 @@
   .sb-detail-row:last-child{ border-bottom:none; }
   @media print{
     .scoreboard, .quickbar, .tabbar, .sheet, .sheet-backdrop, .btn.clay.block, .grid-print-hide{ display:none !important; }
+    html,body{ position:static; overflow:visible; height:auto; }
+    #app{ overflow:visible; height:auto; }
     body, .screen{ padding:0; background:#fff; }
     .card{ box-shadow:none; border:1px solid #ccc; }
   }
@@ -300,7 +314,7 @@ function makeDefaultPlayers(){ return Array.from({length:9}, ()=>({id:uid(), nam
 function uid(){ return 'p'+Math.random().toString(36).slice(2,9); }
 function newTeam(name){ return { name, players: makeDefaultPlayers(), lineup: [], battingIdx:0, stats:{}, pitchStats:{}, currentPitcherId:null, subHistory:{} }; }
 
-const APP_VERSION = '10.3';
+const APP_VERSION = '10.4';
 // Material Symbols Outlined "document_scanner" path (Apache 2.0) — used on the roster Scan button.
 const SCAN_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex:none;"><path d="M2 6V1h5v2H4v3Zm18 0V3h-3V1h5v5ZM2 23v-5h2v3h3v2Zm15 0v-2h3v-3h2v5ZM7 20q-.825 0-1.412-.587Q5 18.825 5 18V6q0-.825.588-1.412Q6.175 4 7 4h10q.825 0 1.413.588Q19 5.175 19 6v12q0 .825-.587 1.413Q17.825 20 17 20Zm2-10h6V8H9Zm0 3h6v-2H9Zm0 3h6v-2H9Z"/></svg>';
 // Material Symbols Outlined "photo_library" path (Apache 2.0) — used on the roster "From Image" button.
@@ -375,6 +389,7 @@ const STRINGS = {
     lbl_first_number_is:'First number is:', btn_first_num_order:'Batting Order', btn_first_num_jersey:'Jersey #',
     hdr_batting_order:'Batting Order', hdr_bench:'Bench',
     lineup_empty:'Drag or add a player here to build the batting order', bench_empty:'No bench players',
+    ocr_tip:"Tip: Take a photo of the batting order, copy jersey numbers and names using your phone's built-in text recognition, and paste into Text here.",
     rosters_from_rows_note:'Rosters will be created based on rows in Batting Order and Bench, including empty rows.',
     scan_crop_title:'Crop & Straighten', scan_crop_hint:'Drag on the photo to crop tightly around the names — this makes recognition far more accurate.|Rotate or nudge the tilt if the photo is angled.',
     btn_rotate_left:'Rotate Left', btn_rotate_right:'Rotate Right', lbl_fine_tilt:'Fine tilt correction',
@@ -417,6 +432,7 @@ const STRINGS = {
     lbl_first_number_is:'先頭の数字は：', btn_first_num_order:'打順', btn_first_num_jersey:'背番号',
     hdr_batting_order:'打順', hdr_bench:'ベンチ',
     lineup_empty:'ここに選手をドラッグ、または追加して打順を作成', bench_empty:'ベンチの選手はいません',
+    ocr_tip:'ヒント：打順表を撮影し、スマートフォン内蔵の文字認識機能で背番号と名前をコピーして、ここの「テキスト」に貼り付けてください。',
     rosters_from_rows_note:'名簿は打順とベンチの行数（空欄も含む）に基づいて作成されます。',
     scan_crop_title:'切り抜き・傾き補正', scan_crop_hint:'名前の部分だけを囲むようにドラッグして切り抜くと、認識精度が大きく上がります。|写真が傾いている場合は回転・微調整してください。',
     btn_rotate_left:'左に回転', btn_rotate_right:'右に回転', lbl_fine_tilt:'傾きの微調整',
@@ -608,6 +624,8 @@ function scrollAppToTop(){
     window.scrollTo(0,0);
     if(document.documentElement) document.documentElement.scrollTop = 0;
     if(document.body) document.body.scrollTop = 0;
+    const app = document.getElementById('app');
+    if(app) app.scrollTop = 0;
   };
   doScroll();
   // Some mobile browsers snap scroll position back to where the tapped button was
@@ -1363,13 +1381,14 @@ function exportCSV(){
 
 // ---------------- RENDER ----------------
 function render(){
+  document.documentElement.classList.toggle('scroll-locked', !state.gameStarted);
   const app = document.getElementById('app');
   const prevSheet = app.querySelector('.sheet');
   const savedScrollTop = prevSheet ? prevSheet.scrollTop : null;
   try{
     app.innerHTML = `
       ${state.gameStarted ? renderScoreboard() : ''}
-      <div class="screen ${state.gameStarted?'with-tabbar':''}">
+      <div class="screen ${state.gameStarted?'with-tabbar':'setup-pad'}">
         ${state.screen==='setup' ? renderSetup() : ''}
         ${state.screen==='game' ? renderGame() : ''}
         ${state.screen==='box' ? renderBox() : ''}
@@ -1591,7 +1610,7 @@ function renderRosterBody(tm){
       <div id="pastePreview" class="paste-preview" style="display:none;"></div>
     </div>
   ` : '';
-  const rosterNote = !state.gameStarted ? `<div style="font-size:11px;color:#8a8373;margin:10px 0 12px;">${t('rosters_from_rows_note')}</div>` : '';
+  const rosterNote = !state.gameStarted ? `<div style="font-size:11px;color:#8a8373;margin:10px 0 4px;">${t('ocr_tip')}</div><div style="font-size:11px;color:#8a8373;margin:0 0 12px;">${t('rosters_from_rows_note')}</div>` : '';
   return `
     ${importRow}
     ${rosterNote}
@@ -2513,11 +2532,9 @@ function renderScorebookGrid(){
   const rows = ids.map(pid=>({ pid, isCurrent: !state.gameOver && key===curKey && pid===curBatter, subbedOut: tm.lineup.length>0 && !tm.lineup.includes(pid) }));
 
   return `
-  <div class="card grid-print-hide" style="padding:11px 12px;">
-    <div class="row">
-      <button class="btn clay icon-btn tight-pad" onclick="printScorebook()">${PDF_ICON}<span>${t('btn_print_pdf')}</span></button>
-      <button class="btn clay icon-btn tight-pad" onclick="exportScorebookImage()">${IMAGE_ICON}<span>${t('btn_export_img')}</span></button>
-    </div>
+  <div class="row grid-print-hide" style="margin-bottom:10px;">
+    <button class="btn clay icon-btn tight-pad" onclick="printScorebook()">${PDF_ICON}<span>${t('btn_print_pdf')}</span></button>
+    <button class="btn clay icon-btn tight-pad" onclick="exportScorebookImage()">${IMAGE_ICON}<span>${t('btn_export_img')}</span></button>
   </div>
   <div class="teamtabs">
     <button class="${state.scorebookTeam==='us'?'active':''}" onclick="state.scorebookTeam='us';render()">${team('us').name}</button>
