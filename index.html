@@ -118,7 +118,7 @@
   .btn.icon-btn{ display:inline-flex; align-items:center; justify-content:center; gap:6px; }
   .btn.icon-btn.tight-pad{ padding-left:6px; padding-right:6px; white-space:nowrap; }
   .paste-panel{ margin-top:10px; border-top:1px dashed var(--line); padding-top:10px; }
-  .paste-panel textarea{ width:100%; min-height:74px; padding:10px; border:1.5px solid var(--line); border-radius:10px; font-size:13px; background:#FCFBF7; color:var(--ink); font-family:inherit; resize:vertical; margin-bottom:0; }
+  .paste-panel textarea{ width:100%; min-height:148px; padding:10px; border:1.5px solid var(--line); border-radius:10px; font-size:13px; background:#FCFBF7; color:var(--ink); font-family:inherit; resize:vertical; margin-bottom:0; }
   .paste-preview{ font-size:11.5px; color:#5B5648; background:#FAF8F2; border-radius:8px; padding:8px 10px; margin-top:8px; max-height:110px; overflow-y:auto; }
   .paste-preview div{ padding:2px 0; }
 
@@ -231,8 +231,8 @@
   .group-label.out{ color:var(--clay); }
 
   .sheet-backdrop{ position:fixed; inset:0; background:rgba(15,20,17,0.45); z-index:30; backdrop-filter:blur(1px); }
-  .sheet{ position:fixed; left:0; right:0; bottom:0; background:#fff; border-radius:20px 20px 0 0; padding:18px 16px; z-index:31; max-height:85vh; overflow-y:auto; box-shadow: 0 -8px 30px rgba(0,0,0,0.28); }
-  .sheet.tall{ max-height:96vh; }
+  .sheet{ position:fixed; left:0; right:0; bottom:0; background:#fff; border-radius:20px 20px 0 0; padding:18px 16px; z-index:31; max-height:85vh; max-height:85dvh; overflow-y:auto; box-shadow: 0 -8px 30px rgba(0,0,0,0.28); }
+  .sheet.tall{ max-height:96vh; max-height:96dvh; } /* dvh: vh counts the area under Chrome's address bar, which clipped the sheet top */
   .sheet h3{ margin:0 0 12px; font-size:15px; font-weight:800; }
   .runner-row{ border:1.5px solid var(--line); border-radius:12px; padding:11px; margin-bottom:8px; }
   .out-block{ border:1.5px solid var(--line); border-radius:12px; padding:11px; margin-bottom:9px; }
@@ -314,7 +314,7 @@ function makeDefaultPlayers(){ return Array.from({length:9}, ()=>({id:uid(), nam
 function uid(){ return 'p'+Math.random().toString(36).slice(2,9); }
 function newTeam(name){ return { name, players: makeDefaultPlayers(), lineup: [], battingIdx:0, stats:{}, pitchStats:{}, currentPitcherId:null, subHistory:{} }; }
 
-const APP_VERSION = '10.4';
+const APP_VERSION = '10.5';
 // Material Symbols Outlined "document_scanner" path (Apache 2.0) — used on the roster Scan button.
 const SCAN_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex:none;"><path d="M2 6V1h5v2H4v3Zm18 0V3h-3V1h5v5ZM2 23v-5h2v3h3v2Zm15 0v-2h3v-3h2v5ZM7 20q-.825 0-1.412-.587Q5 18.825 5 18V6q0-.825.588-1.412Q6.175 4 7 4h10q.825 0 1.413.588Q19 5.175 19 6v12q0 .825-.587 1.413Q17.825 20 17 20Zm2-10h6V8H9Zm0 3h6v-2H9Zm0 3h6v-2H9Z"/></svg>';
 // Material Symbols Outlined "photo_library" path (Apache 2.0) — used on the roster "From Image" button.
@@ -370,7 +370,8 @@ let state = {
 
   importFirstNumberMeaning: 'order', // 'order' | 'jersey' — meaning of the first bare number in pasted/scanned text
   pasteDraftText: '',
-  pastePanelOpen: false
+  pastePanelOpen: false,
+  pastePreviewShown: false
 };
 
 // ---------------- I18N ----------------
@@ -390,14 +391,16 @@ const STRINGS = {
     hdr_batting_order:'Batting Order', hdr_bench:'Bench',
     lineup_empty:'Drag or add a player here to build the batting order', bench_empty:'No bench players',
     ocr_tip:"Tip: Take a photo of the batting order, copy jersey numbers and names using your phone's built-in text recognition, and paste into Text here.",
-    rosters_from_rows_note:'Rosters will be created based on rows in Batting Order and Bench, including empty rows. Jersey and names are optional.',
-    roster_editable_note:'You can still edit the Roster after game is started.',
-    quick_start_note:'<b>Quick Start</b>: Set the number of batters for each team and press Start Game.',
-    scan_crop_title:'Crop & Straighten', scan_crop_hint:'Drag on the photo to crop tightly around the names — this makes recognition far more accurate.|Rotate or nudge the tilt if the photo is angled.',
-    btn_rotate_left:'Rotate Left', btn_rotate_right:'Rotate Right', lbl_fine_tilt:'Fine tilt correction',
+    rosters_from_rows_note:'Rosters will be created based on rows in Batting Order and Bench, including empty rows.',
+    scan_crop_title:'Crop & Straighten', scan_crop_hint:'Adjust the frame to crop tightly around the desired area, and straighten as much as possible — helps make scanning more accurate.',
+    btn_rotate_left:'Rotate Left', btn_rotate_right:'Rotate Right', lbl_fine_tilt:'Fine tilt adjustment',
+    btn_ocr_direct:'Scan Text', btn_ocr_rows:'Scan Tags', lbl_card_color:'Tag colour recognition', btn_color_auto:'Auto', btn_color_pick:'+ Pick color',
+    scan_pick_hint:'Tap a tag on the photo to sample its color…', scan_legend:'Blue = number · Red = name', paste_preview_hint:'Tap Preview to check how rows will be imported.', confirm_big_lineup:'This will create a batting order of {n} batters. Continue?',
+    btn_ok:'Ok', scan_result_title:'Scan result', scan_no_text:'No text found. Adjust the crop, or try the other scan.', scan_note_rows:'rows read', scan_note_low:'low confidence — check the text', btn_paste_clear:'Clear',
+    scan_reading:'Reading text…', scan_detecting:'Detecting rows…', scan_numbers:'Numbers', scan_names:'Names', scan_no_rows:'No tags found. Adjust the crop or pick the tag color.',
     btn_apply_crop:'Apply Crop', btn_reset_crop:'Reset', btn_continue_scan:'Continue',
     scan_loading_title:'Scanning photo…', scan_loading_sub:'Reading jersey numbers and names', scan_loading_note:'This can take a few seconds on mobile',
-    btn_scan_retake:'Retake / Cancel', scan_fail:'Could not read that image. Try a clearer, well-lit photo.',
+    btn_scan_retake:'Cancel', scan_fail:'Could not read that image. Try a clearer, well-lit photo.',
     hdr_at_bat:'At Bat', hdr_result:'Result of At-Bat', grp_on_base:'Batter reaches base / scores', grp_out:'Batter is out',
     grp_on_base_short:'On Base', grp_out_short:'Out',
     btn_undo:'↺ Undo', btn_batter:'Batter', btn_save:'Save', btn_end_half:'End ½ Inn', btn_end_game:'End Game',
@@ -435,14 +438,16 @@ const STRINGS = {
     hdr_batting_order:'打順', hdr_bench:'ベンチ',
     lineup_empty:'ここに選手をドラッグ、または追加して打順を作成', bench_empty:'ベンチの選手はいません',
     ocr_tip:'ヒント：打順表を撮影し、スマートフォン内蔵の文字認識機能で背番号と名前をコピーして、ここの「テキスト」に貼り付けてください。',
-    rosters_from_rows_note:'名簿は打順とベンチの行数（空欄も含む）に基づいて作成されます。背番号と名前は省略できます。',
-    roster_editable_note:'試合開始後も名簿は編集できます。',
-    quick_start_note:'<b>クイックスタート</b>：各チームの打者数を設定して「試合開始」を押してください。',
-    scan_crop_title:'切り抜き・傾き補正', scan_crop_hint:'名前の部分だけを囲むようにドラッグして切り抜くと、認識精度が大きく上がります。|写真が傾いている場合は回転・微調整してください。',
+    rosters_from_rows_note:'名簿は打順とベンチの行数（空欄も含む）に基づいて作成されます。',
+    scan_crop_title:'切り抜き・傾き補正', scan_crop_hint:'枠を調整して必要な部分だけを囲むように切り抜き、できるだけ傾きを直してください。スキャンの精度が上がります。',
     btn_rotate_left:'左に回転', btn_rotate_right:'右に回転', lbl_fine_tilt:'傾きの微調整',
+    btn_ocr_direct:'テキストをスキャン', btn_ocr_rows:'タグをスキャン', lbl_card_color:'タグの色認識', btn_color_auto:'自動', btn_color_pick:'＋色を選択',
+    scan_pick_hint:'写真上のタグをタップして色を取得…', scan_legend:'青＝背番号 · 赤＝名前', paste_preview_hint:'「プレビュー」を押すと取り込み内容を確認できます。', confirm_big_lineup:'{n}人の打順を作成します。よろしいですか？',
+    btn_ok:'OK', scan_result_title:'スキャン結果', scan_no_text:'テキストが見つかりません。切り抜きを調整するか、もう一方のスキャンをお試しください。', scan_note_rows:'行を読み取りました', scan_note_low:'信頼度が低い行があります。内容を確認してください', btn_paste_clear:'クリア',
+    scan_reading:'文字を認識中…', scan_detecting:'行を検出中…', scan_numbers:'背番号', scan_names:'名前', scan_no_rows:'タグが見つかりません。切り抜きを調整するか、タグの色を選択してください。',
     btn_apply_crop:'切り抜きを適用', btn_reset_crop:'リセット', btn_continue_scan:'続ける',
     scan_loading_title:'写真を読み取り中…', scan_loading_sub:'背番号と名前を認識しています', scan_loading_note:'モバイルでは数秒かかることがあります',
-    btn_scan_retake:'撮り直す / キャンセル', scan_fail:'画像を読み取れませんでした。より鮮明で明るい写真でお試しください。',
+    btn_scan_retake:'キャンセル', scan_fail:'画像を読み取れませんでした。より鮮明で明るい写真でお試しください。',
     hdr_at_bat:'打席', hdr_result:'打席の結果', grp_on_base:'出塁・得点', grp_out:'アウト',
     grp_on_base_short:'出塁', grp_out_short:'アウト',
     btn_undo:'↺ 元に戻す', btn_batter:'打者', btn_save:'保存', btn_end_half:'半回終了', btn_end_game:'試合終了',
@@ -1606,15 +1611,18 @@ function renderRosterBody(tm){
         <button class="import-btn ${state.importFirstNumberMeaning==='order'?'active':''}" style="height:34px;" onclick="setImportFirstMeaning('order')">${t('btn_first_num_order')}</button>
         <button class="import-btn ${state.importFirstNumberMeaning==='jersey'?'active':''}" style="height:34px;" onclick="setImportFirstMeaning('jersey')">${t('btn_first_num_jersey')}</button>
       </div>
-      <textarea id="pasteBox" oninput="state.pasteDraftText=this.value" placeholder="${t('paste_placeholder')}">${escapeHtml(state.pasteDraftText)}</textarea>
+      <div style="display:flex; gap:8px; align-items:stretch;">
+        <textarea id="pasteBox" style="flex:1 1 50%; min-width:0;" oninput="onPasteInput(this.value)" placeholder="${t('paste_placeholder')}">${escapeHtml(state.pasteDraftText)}</textarea>
+        <div id="pastePreview" class="paste-preview" style="flex:1 1 50%; min-width:0; margin-top:0; height:148px; max-height:none;">${pastePreviewHTML()}</div>
+      </div>
       <div class="row" style="margin-top:8px;">
+        <button class="btn ghost small" onclick="clearPastePanel()">${t('btn_paste_clear')}</button>
         <button class="btn ghost small" onclick="showPastePreview()">${t('btn_paste_preview')}</button>
         <button class="btn clay small" onclick="applyPastedRoster()">${t('btn_paste_add')}</button>
       </div>
-      <div id="pastePreview" class="paste-preview" style="display:none;"></div>
     </div>
   ` : '';
-  const rosterNote = !state.gameStarted ? `<div style="font-size:11px;color:#8a8373;margin:10px 0 4px;">${t('ocr_tip')}</div><div style="font-size:11px;color:#8a8373;margin:0 0 4px;">${t('rosters_from_rows_note')}</div><div style="font-size:11px;color:#8a8373;margin:0 0 4px;">${t('roster_editable_note')}</div><div style="font-size:11px;color:#8a8373;margin:0 0 12px;">${t('quick_start_note')}</div>` : '';
+  const rosterNote = !state.gameStarted ? `<div style="font-size:11px;color:#8a8373;margin:10px 0 4px;">${t('ocr_tip')}</div><div style="font-size:11px;color:#8a8373;margin:0 0 12px;">${t('rosters_from_rows_note')}</div>` : '';
   return `
     ${importRow}
     ${rosterNote}
@@ -1654,7 +1662,7 @@ function pgRowHTML(p, slotNum, group){
     <div class="pg-row" data-id="${p.id}" data-group="${group}">
       <div class="pg-grip" data-pg-handle>${GRIP_ICON}</div>
       <input class="pg-num" type="text" placeholder="#" value="${p.num}" maxlength="3" oninput="updateRosterField('${p.id}','num',this.value)">
-      <input class="pg-name" type="text" placeholder="Name (optional)" value="${p.name}" oninput="updateRosterField('${p.id}','name',this.value)">
+      <input class="pg-name" type="text" placeholder="Name" value="${p.name}" oninput="updateRosterField('${p.id}','name',this.value)">
       ${actionBtn}
     </div>
   </div>`;
@@ -1714,18 +1722,38 @@ function parseImportText(text, firstMeaning){
   });
   const rows = [];
   parts.forEach(part=>{
+    // Number-only row (no name): keep it — one number is read per firstMeaning, a second is the other type.
+    const mn = part.match(/^#?\s*(\d{1,3})\s*[-.\)]?\s*(?:#?\s*(\d{1,3})\s*[-.\)]?\s*)?$/);
+    if(mn){
+      const n1 = mn[1], n2 = mn[2]||null;
+      let order=null, jersey='';
+      if(n2){ if(firstMeaning==='order'){ order=n1; jersey=n2; } else { jersey=n1; order=n2; } }
+      else if(firstMeaning==='order'){ order=n1; }
+      else { jersey=n1; }
+      rows.push({order, num:jersey, name:''});
+      return;
+    }
     const m = part.match(/^#?\s*(\d{1,3})\s*[-.\)]?\s*(?:#?\s*(\d{1,3})\s*[-.\)]?\s*)?(.+)$/);
     if(m && m[1] && m[3] && /[A-Za-z]/.test(m[3])){
-      const n1 = m[1], n2 = m[2]||null, name = m[3].trim();
+      const n1 = m[1], n2 = m[2]||null; let name = m[3].trim();
       let order=null, jersey='';
       if(n2){
         if(firstMeaning==='order'){ order=n1; jersey=n2; } else { jersey=n1; order=n2; }
       } else if(firstMeaning==='order'){ order=n1; }
       else { jersey=n1; }
+      if(order && !jersey){ // leading number was the batting order -> a trailing number on the name is the jersey ("1 Mark 12")
+        const tn = name.match(/^(.*?[A-Za-z][^\d]*?)(?:\s*,\s*|\s+|\s*#\s*)#?(\d{1,3})$/);
+        if(tn){ name = tn[1].trim(); jersey = tn[2]; }
+      }
       rows.push({order, num:jersey, name});
+    } else if(/^([A-Za-z][A-Za-z'\-. ]*?)(?:\s*,\s*|\s+|\s*#\s*)#?(\d{1,3})$/.test(part)){
+      // name followed by a separated trailing number ("Mark 12", "Mark #12", "Mark, 12") = name + jersey.
+      // No separator ("Mark12") is NOT split — it falls through to the name-only branch below.
+      const tm2 = part.match(/^([A-Za-z][A-Za-z'\-. ]*?)(?:\s*,\s*|\s+|\s*#\s*)#?(\d{1,3})$/);
+      rows.push({order:null, num:tm2[2], name:tm2[1].trim()});
     } else if(/,/.test(part) && !/\d/.test(part)){
       part.split(',').map(s=>s.trim()).filter(Boolean).forEach(nm=>rows.push({order:null, num:'', name:nm}));
-    } else if(/^[A-Za-z][A-Za-z'\-. ]*$/.test(part)){
+    } else if(/^[A-Za-z][A-Za-z'\-. ]*\d*$/.test(part)){ // digits glued to letters ("Mark12") stay part of the name
       rows.push({order:null, num:'', name:part});
     }
   });
@@ -1751,7 +1779,7 @@ function applyImportedRows(tm, rows){
       lineupRows = tm.players.filter(p=>(p.group||'lineup')!=='bench');
     }
     const target = lineupRows[idx];
-    target.name = r.name;
+    if(r.name) target.name = r.name; // a number-only row must not blank out an existing name
     if(r.num) target.num = r.num;
   });
   if(implicit.length) insertImportedIntoLineup(tm, implicit);
@@ -1761,16 +1789,28 @@ function syncPasteDraft(){
   if(el) state.pasteDraftText = el.value;
 }
 function setImportFirstMeaning(v){ syncPasteDraft(); state.importFirstNumberMeaning = v; render(); }
-function showPastePreview(){
-  const rows = parseImportText(document.getElementById('pasteBox').value, state.importFirstNumberMeaning);
-  const box = document.getElementById('pastePreview');
-  box.style.display = 'block';
-  box.innerHTML = rows.map(r=>`<div>⚾ ${r.order? r.order+'. ' : ''}${r.num? '#'+r.num+' ' : ''}${r.name}</div>`).join('') || '<div>No rows detected</div>';
+function pastePreviewHTML(){
+  if(!state.pastePreviewShown) return `<div style="color:#A39C88;">${t('paste_preview_hint')}</div>`;
+  const rows = parseImportText(state.pasteDraftText, state.importFirstNumberMeaning);
+  return rows.map(r=>`<div>⚾ ${r.order? r.order+'. ' : ''}${r.num? '#'+r.num+' ' : ''}${escapeHtml(r.name)}</div>`).join('') || '<div>No rows detected</div>';
 }
+function refreshPastePreview(){ const el = document.getElementById('pastePreview'); if(el) el.innerHTML = pastePreviewHTML(); }
+function onPasteInput(v){ state.pasteDraftText = v; if(state.pastePreviewShown) refreshPastePreview(); }
+function clearPastePanel(){
+  state.pasteDraftText = '';
+  const el = document.getElementById('pasteBox'); if(el) el.value = '';
+  refreshPastePreview();
+}
+function showPastePreview(){ syncPasteDraft(); state.pastePreviewShown = true; refreshPastePreview(); }
 function applyPastedRoster(){
   const rows = parseImportText(document.getElementById('pasteBox').value, state.importFirstNumberMeaning);
   if(!rows.length) return;
-  applyImportedRows(team(state.setupTeam), rows);
+  // Guard against a stray/misread number (e.g. a jersey # read as a batting order) ballooning the lineup.
+  const tm = team(state.setupTeam);
+  const maxOrder = Math.max(0, ...rows.filter(r=>r.order).map(r=>Number(r.order)));
+  const lineupCount = tm.players.filter(pl=>(pl.group||'lineup')!=='bench').length;
+  if(maxOrder>10 && maxOrder>lineupCount && !confirm(t('confirm_big_lineup').replace('{n}', maxOrder))) return;
+  applyImportedRows(tm, rows);
   state.pasteDraftText = '';
   state.pastePanelOpen = false;
   render();
@@ -1922,7 +1962,8 @@ function handleScanFile(input){
         state.sheet = {
           outcome:'SCAN_CROP', teamKey,
           originalImage: img, rawImage: img,
-          tiltDeg: 0, cropRect: null, dragStart: null
+          tiltDeg: 0, cropRect: scanCropFullRectFor(img), drag: null, detected: null,
+          pickedColors: [], pickMode: false, scanResult: null
         };
         render();
       };
@@ -1944,10 +1985,24 @@ function handleScanFile(input){
 // destroy/recreate the canvas element mid-drag. Only entering/leaving the sheet, and discrete
 // rotate/crop/reset actions, go through render(); dragging and the tilt slider redraw the canvas
 // directly (same pattern the roster's oninput fields already use for high-frequency updates). ----
-function scanCropDisplayScale(){
-  const s = state.sheet;
-  const maxW = Math.min(360, window.innerWidth - 60);
-  return Math.min(1, maxW / s.rawImage.width);
+function scanCropDisplayScaleFor(im){
+  const maxW = Math.min(360, window.innerWidth - 60); // leaves ~30px scroll lanes either side of the canvas
+  return Math.min(1, maxW / im.width);
+}
+function scanCropDisplayScale(){ return scanCropDisplayScaleFor(state.sheet.rawImage); }
+// Default crop = the whole image, so the frame (and its handles) is visible from the start.
+function scanCropFullRectFor(im){
+  const k = scanCropDisplayScaleFor(im);
+  return { x:0, y:0, w:Math.floor(im.width*k), h:Math.floor(im.height*k) };
+}
+function scanCropCssRatio(){
+  const c = document.getElementById('scanCropCanvas'); if(!c) return 1;
+  const r = c.getBoundingClientRect(); return r.width>0 ? c.width/r.width : 1;
+}
+// Corners first so they win hit-tests over edge handles on small frames.
+function scanCropHandlePoints(r){
+  const cx = r.x+r.w/2, cy = r.y+r.h/2, x1 = r.x+r.w, y1 = r.y+r.h;
+  return [['nw',r.x,r.y],['ne',x1,r.y],['se',x1,y1],['sw',r.x,y1],['n',cx,r.y],['e',x1,cy],['s',cx,y1],['w',r.x,cy]];
 }
 function drawScanCropCanvas(){
   const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
@@ -1963,49 +2018,100 @@ function drawScanCropCanvas(){
   ctx.rotate(tilt);
   ctx.drawImage(s.rawImage, -canvas.width/2, -canvas.height/2, canvas.width, canvas.height);
   ctx.restore();
-  if(s.cropRect){
-    ctx.strokeStyle = '#FFB800'; ctx.lineWidth = 2; ctx.setLineDash([6,4]);
-    ctx.strokeRect(s.cropRect.x, s.cropRect.y, s.cropRect.w, s.cropRect.h);
-    ctx.fillStyle = 'rgba(255,184,0,0.12)';
-    ctx.fillRect(s.cropRect.x, s.cropRect.y, s.cropRect.w, s.cropRect.h);
+  const r = s.cropRect;
+  if(r){
+    const W = canvas.width, H = canvas.height, ratio = scanCropCssRatio();
+    ctx.fillStyle = 'rgba(0,0,0,0.38)'; // dim everything outside the crop
+    ctx.fillRect(0,0,W,r.y); ctx.fillRect(0,r.y+r.h,W,H-(r.y+r.h)); ctx.fillRect(0,r.y,r.x,r.h); ctx.fillRect(r.x+r.w,r.y,W-(r.x+r.w),r.h);
+    if(s.detected && s.detected.length){ // Scan Tags detection result: blue = number, red = name, numbered per row
+      ctx.setLineDash([]); ctx.lineWidth = 2*ratio; const fs = 10*ratio;
+      s.detected.forEach((d,i)=>{
+        [[d.num,'#1E6FFF'],[d.name,'#E5322D']].forEach(([b,col])=>{
+          if(!b) return; ctx.strokeStyle = col;
+          ctx.strokeRect(b.x0*scale, b.y0*scale, (b.x1-b.x0)*scale, (b.y1-b.y0)*scale);
+        });
+        const ref = d.name || d.num;
+        if(ref){
+          const lx = ref.x0*scale, ly = Math.max(ref.y0*scale, fs+3*ratio);
+          ctx.fillStyle = '#163C2C'; ctx.fillRect(lx, ly-fs-3*ratio, fs*1.9, fs+3*ratio);
+          ctx.fillStyle = '#fff'; ctx.font = 'bold '+fs+'px monospace'; ctx.fillText(String(i+1), lx+3*ratio, ly-3*ratio);
+        }
+      });
+    }
+    ctx.strokeStyle = '#FFB800'; ctx.lineWidth = 2*ratio; ctx.setLineDash([6*ratio,4*ratio]);
+    ctx.strokeRect(r.x+ratio, r.y+ratio, r.w-2*ratio, r.h-2*ratio);
+    ctx.setLineDash([]);
+    const hs = 12*ratio;
+    scanCropHandlePoints(r).forEach(([n,x,y])=>{
+      ctx.fillStyle = '#FFB800'; ctx.strokeStyle = '#8a6100'; ctx.lineWidth = 1.5*ratio;
+      const px = Math.min(Math.max(x, hs/2), W-hs/2), py = Math.min(Math.max(y, hs/2), H-hs/2); // keep handles fully visible at the image edge
+      ctx.fillRect(px-hs/2, py-hs/2, hs, hs); ctx.strokeRect(px-hs/2, py-hs/2, hs, hs);
+    });
   }
 }
 function scanCropCanvasPoint(e){
   const canvas = document.getElementById('scanCropCanvas');
   const rect = canvas.getBoundingClientRect();
-  const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-  const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-  return { x: cx * canvas.width/rect.width, y: cy * canvas.height/rect.height };
+  const t0 = e.touches ? (e.touches[0] || e.changedTouches[0]) : e;
+  return { x:(t0.clientX-rect.left)*canvas.width/rect.width, y:(t0.clientY-rect.top)*canvas.height/rect.height };
+}
+// Hit-test: a handle (resize), the frame interior (move), or outside the frame (draw a new box).
+function scanCropHit(s, p){
+  const hs = 22*scanCropCssRatio();
+  for(const [n,x,y] of scanCropHandlePoints(s.cropRect)){ if(Math.abs(p.x-x)<=hs && Math.abs(p.y-y)<=hs) return n; }
+  const r = s.cropRect;
+  return (p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h) ? 'move' : 'draw';
 }
 function scanCropDragStart(e){
   const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
   e.preventDefault();
-  s.dragStart = scanCropCanvasPoint(e);
-  s.cropRect = { x:s.dragStart.x, y:s.dragStart.y, w:0, h:0 };
+  const p = scanCropCanvasPoint(e);
+  if(s.pickMode){ scanCropPickColorAt(p); return; }
+  const mode = scanCropHit(s, p);
+  s.drag = { mode, p0:p, r0:Object.assign({}, s.cropRect) };
+  if(mode==='draw') s.cropRect = { x:p.x, y:p.y, w:0, h:0 };
 }
 function scanCropDragMove(e){
-  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP' || !s.dragStart) return;
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP' || !s.drag) return;
   e.preventDefault();
-  const p = scanCropCanvasPoint(e);
-  s.cropRect = {
-    x: Math.min(s.dragStart.x, p.x), y: Math.min(s.dragStart.y, p.y),
-    w: Math.abs(p.x-s.dragStart.x), h: Math.abs(p.y-s.dragStart.y)
-  };
+  const canvas = document.getElementById('scanCropCanvas'), W = canvas.width, H = canvas.height;
+  const clamp = (v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  const p = scanCropCanvasPoint(e), d = s.drag, r0 = d.r0, MIN = 24*scanCropCssRatio();
+  const dx = p.x-d.p0.x, dy = p.y-d.p0.y;
+  let x0 = r0.x, y0 = r0.y, x1 = r0.x+r0.w, y1 = r0.y+r0.h;
+  if(d.mode==='move'){
+    x0 = clamp(r0.x+dx, 0, W-r0.w); y0 = clamp(r0.y+dy, 0, H-r0.h); x1 = x0+r0.w; y1 = y0+r0.h;
+  } else if(d.mode==='draw'){
+    x0 = clamp(Math.min(d.p0.x,p.x),0,W); x1 = clamp(Math.max(d.p0.x,p.x),0,W);
+    y0 = clamp(Math.min(d.p0.y,p.y),0,H); y1 = clamp(Math.max(d.p0.y,p.y),0,H);
+  } else {
+    if(d.mode.includes('w')) x0 = clamp(r0.x+dx, 0, x1-MIN);
+    if(d.mode.includes('e')) x1 = clamp(x1+dx, x0+MIN, W);
+    if(d.mode.includes('n')) y0 = clamp(r0.y+dy, 0, y1-MIN);
+    if(d.mode.includes('s')) y1 = clamp(y1+dy, y0+MIN, H);
+  }
+  s.cropRect = { x:x0, y:y0, w:x1-x0, h:y1-y0 };
   drawScanCropCanvas();
 }
-function scanCropDragEnd(){ const s = state.sheet; if(s) s.dragStart = null; }
+function scanCropDragEnd(){
+  const s = state.sheet; if(!s || !s.drag) return;
+  // A drawn box too small to be intentional (a stray tap) restores the previous frame.
+  if(s.drag.mode==='draw' && (s.cropRect.w < 24*scanCropCssRatio() || s.cropRect.h < 24*scanCropCssRatio())){ s.cropRect = s.drag.r0; drawScanCropCanvas(); }
+  s.drag = null;
+}
 function scanCropTiltChange(val){
   const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
-  s.tiltDeg = Number(val);
+  s.tiltDeg = Number(val); s.detected = null;
   const lbl = document.getElementById('scanTiltVal'); if(lbl) lbl.textContent = val;
   drawScanCropCanvas();
 }
+// Listeners sit on the canvas itself (touch-action:none there only) so the side gutters stay scrollable.
 function initScanCropCanvas(){
-  const wrap = document.getElementById('scanCropWrap'); if(!wrap) return;
+  const canvas = document.getElementById('scanCropCanvas'); if(!canvas) return;
   drawScanCropCanvas();
-  ['mousedown','touchstart'].forEach(ev=>wrap.addEventListener(ev, scanCropDragStart, {passive:false}));
-  ['mousemove','touchmove'].forEach(ev=>wrap.addEventListener(ev, scanCropDragMove, {passive:false}));
-  ['mouseup','touchend','mouseleave'].forEach(ev=>wrap.addEventListener(ev, scanCropDragEnd));
+  ['mousedown','touchstart'].forEach(ev=>canvas.addEventListener(ev, scanCropDragStart, {passive:false}));
+  ['mousemove','touchmove'].forEach(ev=>canvas.addEventListener(ev, scanCropDragMove, {passive:false}));
+  ['mouseup','touchend','touchcancel','mouseleave'].forEach(ev=>canvas.addEventListener(ev, scanCropDragEnd));
 }
 function scanCropRotate90(dir){
   const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
@@ -2017,79 +2123,273 @@ function scanCropRotate90(dir){
   ctx.rotate(dir * Math.PI/2);
   ctx.drawImage(s.rawImage, -w/2, -h/2);
   const img = new Image();
-  img.onload = ()=>{ s.rawImage = img; s.cropRect = null; s.tiltDeg = 0; render(); };
+  img.onload = ()=>{ s.rawImage = img; s.cropRect = scanCropFullRectFor(img); s.tiltDeg = 0; s.detected = null; render(); };
   img.src = c.toDataURL('image/png');
-}
-function scanCropApplyCrop(){
-  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP' || !s.cropRect || s.cropRect.w<4 || s.cropRect.h<4) return;
-  const canvas = document.getElementById('scanCropCanvas'); // already has current tilt baked in
-  const out = document.createElement('canvas');
-  out.width = s.cropRect.w; out.height = s.cropRect.h;
-  out.getContext('2d').drawImage(canvas, s.cropRect.x, s.cropRect.y, s.cropRect.w, s.cropRect.h, 0, 0, s.cropRect.w, s.cropRect.h);
-  const img = new Image();
-  img.onload = ()=>{ s.rawImage = img; s.cropRect = null; s.tiltDeg = 0; render(); };
-  img.src = out.toDataURL('image/png');
 }
 function scanCropReset(){
   const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
-  s.rawImage = s.originalImage; s.cropRect = null; s.tiltDeg = 0;
+  s.rawImage = s.originalImage; s.cropRect = scanCropFullRectFor(s.originalImage); s.tiltDeg = 0; s.detected = null;
   render();
 }
 function scanCropCancel(){ state.sheet = null; render(); }
-// Continue straight to OCR on the current working image (with tilt baked in even if the user
-// never drew a crop box) — lets a well-framed photo skip cropping entirely.
-function scanCropConfirm(){
-  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
-  const canvas = document.getElementById('scanCropCanvas'); // current tilt already baked in
-  const teamKey = s.teamKey;
-  runOCRAndReview(canvas.toDataURL('image/png'), teamKey);
+// ---------------- ROSTER SCAN: detection + OCR pipeline ----------------
+// Both scan buttons work from a FULL-RESOLUTION copy of the photo (tilt applied, then the dragged crop
+// box, if any, mapped back from on-screen coordinates) — the on-screen canvas is downscaled for display
+// and is never used as OCR input. All OCR is binarized. Results land in the shared paste textarea.
+//   scanRunDirect: whole crop -> binarize -> one OCR read (printed lists/tables)
+//   scanRunRows:   detect cards (generic color distance) -> group into rows -> number/name per row ->
+//                  two OCR passes (digits / letters) -> "<num> <name>" lines
+// Tesseract.js v5's recognize() ignores a 4th params arg, so one persistent worker + setParameters().
+let ocrWorker = null;
+async function getOcrWorker(){
+  if(!ocrWorker) ocrWorker = await Tesseract.createWorker('eng');
+  return ocrWorker;
+}
+const OCR_WL_BOTH = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'- ";
+const OCR_WL_NUM = "0123456789";
+const OCR_WL_NAME = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'- ";
+const OCR_PSM = '6', OCR_THRESH = 99, OCR_UPSCALE_MIN_SIDE = 150, OCR_DIRECT_MAX_SIDE = 2400;
+const ocrTick = ()=> new Promise(r=>setTimeout(r,20));
+function ocrStatus(msg){ const el = document.querySelector('.sheet .loading-text'); if(el) el.textContent = msg; }
+
+function scanCropTiltedCanvas(){
+  const s = state.sheet, im = s.rawImage;
+  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+  const x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height); // tilt corners must be white, not transparent-black
+  x.translate(c.width/2, c.height/2); x.rotate((s.tiltDeg||0)*Math.PI/180);
+  x.drawImage(im, -c.width/2, -c.height/2);
+  return c;
+}
+function scanCropWorkCanvas(){
+  const full = scanCropTiltedCanvas(), r = state.sheet.cropRect, k = scanCropDisplayScale();
+  if(!r || r.w<4 || r.h<4){ full.ox = 0; full.oy = 0; return full; }
+  const x0 = Math.max(0, Math.round(r.x/k)), y0 = Math.max(0, Math.round(r.y/k));
+  const w = Math.max(1, Math.min(full.width-x0, Math.round(r.w/k))), h = Math.max(1, Math.min(full.height-y0, Math.round(r.h/k)));
+  const out = document.createElement('canvas'); out.width = w; out.height = h;
+  out.getContext('2d').drawImage(full, x0, y0, w, h, 0, 0, w, h);
+  out.ox = x0; out.oy = y0; // offset of this crop within the full-res tilted image (for the detection overlay)
+  return out;
+}
+// Tap-to-pick on the crop canvas: average a 9x9 patch from the full-res tilted image (not the display
+// canvas, which has the crop overlay tint painted into it).
+function scanCropPickColorAt(p){
+  const s = state.sheet, k = scanCropDisplayScale(), full = scanCropTiltedCanvas();
+  const px = Math.max(0, Math.min(full.width-9, Math.round(p.x/k)-4)), py = Math.max(0, Math.min(full.height-9, Math.round(p.y/k)-4));
+  const d = full.getContext('2d').getImageData(px,py,9,9).data; let R=0,G=0,B=0;
+  for(let i=0;i<81;i++){ R+=d[i*4]; G+=d[i*4+1]; B+=d[i*4+2]; }
+  s.pickedColors.push([Math.round(R/81),Math.round(G/81),Math.round(B/81)]); s.pickMode = false;
+  render();
+}
+function scanColorAuto(){ const s=state.sheet; if(!s) return; s.pickedColors=[]; s.pickMode=false; render(); }
+function scanColorPick(){ const s=state.sheet; if(!s) return; s.pickMode=true; render(); }
+function scanColorRemove(i){ const s=state.sheet; if(!s) return; s.pickedColors.splice(i,1); render(); }
+
+// ---- binarization: zero-padding crop -> Bradley adaptive threshold -> border/line removal -> despeckle ----
+// floorFrac>0 adds a contrast floor (pixel must also be darker than its local mean by floorFrac of the
+// crop's ink-to-paper range) — suppresses faint table grid lines. 0 = plain Bradley (colored cards).
+function ocrThreshold(c, tFrac, floorFrac){
+  tFrac = tFrac===undefined ? 0.15 : tFrac; floorFrac = floorFrac||0;
+  const ctx = c.getContext('2d'), w = c.width, h = c.height; if(w<3||h<3) return c;
+  const im = ctx.getImageData(0,0,w,h), d = im.data, g = new Float64Array(w*h);
+  for(let i=0;i<w*h;i++) g[i] = 0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2];
+  const I = new Float64Array((w+1)*(h+1));
+  for(let y=0;y<h;y++){ let rs=0; for(let x=0;x<w;x++){ rs+=g[y*w+x]; I[(y+1)*(w+1)+(x+1)] = I[y*(w+1)+(x+1)]+rs; } }
+  const s2 = Math.max(7, Math.floor(Math.min(w,h)/8));
+  const hist = new Uint32Array(256); for(let i=0;i<w*h;i++) hist[g[i]|0]++;
+  const pct = q=>{ let a=0; const t=q*w*h; for(let v=0;v<256;v++){ a+=hist[v]; if(a>=t) return v; } return 255; };
+  const floor = floorFrac*Math.max(0, pct(0.95)-pct(0.005));
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const cx1=Math.max(0,x-s2), cx2=Math.min(w-1,x+s2), cy1=Math.max(0,y-s2), cy2=Math.min(h-1,y+s2);
+    const cnt = (cx2-cx1+1)*(cy2-cy1+1);
+    const sum = I[(cy2+1)*(w+1)+(cx2+1)]-I[cy1*(w+1)+(cx2+1)]-I[(cy2+1)*(w+1)+cx1]+I[cy1*(w+1)+cx1];
+    const idx = y*w+x, v = (g[idx]*cnt<=sum*(1-tFrac) && sum/cnt-g[idx]>=floor) ? 0 : 255;
+    d[idx*4]=d[idx*4+1]=d[idx*4+2]=v;
+  }
+  ctx.putImageData(im,0,0); return c;
+}
+function ocrBandErase(c){
+  const ctx=c.getContext('2d'), w=c.width, h=c.height, im=ctx.getImageData(0,0,w,h), d=im.data, band=Math.max(2,Math.round(Math.min(w,h)*0.06));
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++) if(x<band||x>=w-band||y<band||y>=h-band){ const i=(y*w+x)*4; d[i]=d[i+1]=d[i+2]=255; }
+  ctx.putImageData(im,0,0); return c;
+}
+// Erases small speckle, plus thin straight border lines (a blob spanning >=85% of the crop in one
+// dimension while only a few px thick in the other — real glyph runs always have more cross-extent).
+function ocrDespeckle(c, minPx){
+  const ctx=c.getContext('2d'), w=c.width, h=c.height;
+  minPx = minPx===undefined ? Math.max(6, Math.round(w*h*0.0006)) : minPx;
+  const thin = Math.max(3, Math.round(Math.min(w,h)*0.035));
+  const im=ctx.getImageData(0,0,w,h), d=im.data, lab=new Int32Array(w*h).fill(-1), qx=new Int32Array(w*h), qy=new Int32Array(w*h);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const idx=y*w+x; if(d[idx*4]!==0||lab[idx]!==-1) continue;
+    let hd=0,tl=0; qx[tl]=x; qy[tl]=y; tl++; lab[idx]=idx; let a=x,b=x,c0=y,c1=y;
+    while(hd<tl){
+      const cx=qx[hd], cy=qy[hd]; hd++; if(cx<a)a=cx; if(cx>b)b=cx; if(cy<c0)c0=cy; if(cy>c1)c1=cy;
+      for(const [nx,ny] of [[cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]]){
+        if(nx<0||ny<0||nx>=w||ny>=h) continue; const ni=ny*w+nx;
+        if(d[ni*4]===0 && lab[ni]===-1){ lab[ni]=idx; qx[tl]=nx; qy[tl]=ny; tl++; }
+      }
+    }
+    const bw=b-a+1, bh=c1-c0+1;
+    if(tl<minPx || (bw>=w*0.85&&bh<=thin) || (bh>=h*0.85&&bw<=thin)){ for(let k=0;k<tl;k++){ const p=(qy[k]*w+qx[k])*4; d[p]=d[p+1]=d[p+2]=255; } }
+  }
+  ctx.putImageData(im,0,0); return c;
+}
+// opts.floor: contrast floor fraction. opts.band=false: skip the edge-strip erase (tight text crops
+// would lose edge glyphs). opts.minPx: despeckle floor (small, to keep i-dots, for text crops).
+function ocrBinarize(c, opts){
+  opts = opts||{}; c = ocrThreshold(c, undefined, opts.floor);
+  if(opts.band!==false) c = ocrBandErase(c);
+  return ocrDespeckle(c, opts.minPx);
+}
+// Crops `box` (x0,y0,x1,y1 in src pixels) with zero padding, binarizes at native resolution, and only
+// then upscales (nearest-neighbor) if the crop is genuinely small.
+function ocrCropBox(src, box, opts){
+  const w = Math.max(1,Math.round(box.x1-box.x0)), h = Math.max(1,Math.round(box.y1-box.y0));
+  let nat = document.createElement('canvas'); nat.width=w; nat.height=h;
+  const nx = nat.getContext('2d'); nx.fillStyle='#fff'; nx.fillRect(0,0,w,h);
+  nx.drawImage(src, Math.round(box.x0), Math.round(box.y0), w, h, 0, 0, w, h);
+  nat = ocrBinarize(nat, opts);
+  const eff = Math.min(nat.width,nat.height) < OCR_UPSCALE_MIN_SIDE ? 2.5 : 1;
+  const ow = Math.round(nat.width*eff), oh = Math.round(nat.height*eff);
+  const out = document.createElement('canvas'); out.width=ow; out.height=oh;
+  const ox = out.getContext('2d'); ox.imageSmoothingEnabled = false; ox.drawImage(nat,0,0,nat.width,nat.height,0,0,ow,oh);
+  return out.toDataURL('image/png');
 }
 
-// Fixed preprocessing (grayscale + contrast boost + 2x upscale) and PSM 6 (uniform block of
-// text) — settings validated against real roster photos in a standalone test harness before
-// being hard-coded here; not exposed as user-facing controls in the real app.
-function preprocessForOCR(dataUrl){
-  return new Promise((resolve)=>{
-    const img = new Image();
-    img.onload = ()=>{
-      const scale = 2;
-      const c = document.createElement('canvas');
-      c.width = img.width*scale; c.height = img.height*scale;
-      const ctx = c.getContext('2d');
-      ctx.drawImage(img, 0, 0, c.width, c.height);
-      const imgData = ctx.getImageData(0,0,c.width,c.height);
-      const d = imgData.data;
-      const contrastFactor = 1.6, intercept = 128*(1-contrastFactor);
-      for(let i=0;i<d.length;i+=4){
-        const v = 0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
-        const cv = Math.max(0,Math.min(255, v*contrastFactor+intercept));
-        d[i]=d[i+1]=d[i+2]=cv;
+// ---- card detection: ONE pass, generic color distance, no aspect filter ----
+function ocrDist(r,g,b,ref){ const a=r-ref[0], b2=g-ref[1], c=b-ref[2]; return Math.sqrt(a*a+b2*b2+c*c); }
+function ocrSampleBg(d,w,h){
+  let R=0,G=0,B=0,n=0; const m=Math.max(2,Math.floor(Math.min(w,h)*0.03));
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++) if(x<m||x>=w-m||y<m||y>=h-m){ const i=(y*w+x)*4; R+=d[i]; G+=d[i+1]; B+=d[i+2]; n++; }
+  return [R/n,G/n,B/n];
+}
+// Auto (no picked colors): flags pixels FAR from the crop-edge background color. Picked colors: flags
+// pixels CLOSE to any picked color. Blobs are returned in src pixel coordinates.
+function ocrDetectBoxes(src, picked, thresh){
+  const s = Math.min(1, 500/src.width), w = Math.round(src.width*s), h = Math.round(src.height*s);
+  const c = document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d'); x.drawImage(src,0,0,w,h);
+  const d = x.getImageData(0,0,w,h).data;
+  const manual = picked && picked.length>0, bg = manual ? null : ocrSampleBg(d,w,h);
+  const mask = new Uint8Array(w*h);
+  for(let i=0;i<w*h;i++){
+    const r=d[i*4], g=d[i*4+1], b=d[i*4+2];
+    if(manual){ let m=0; for(const p of picked){ if(ocrDist(r,g,b,p)<thresh){ m=1; break; } } mask[i]=m; }
+    else mask[i] = ocrDist(r,g,b,bg)>thresh ? 1 : 0;
+  }
+  const vis=new Uint8Array(w*h), qx=new Int32Array(w*h), qy=new Int32Array(w*h), boxes=[];
+  for(let y=0;y<h;y++)for(let xx=0;xx<w;xx++){
+    const idx=y*w+xx; if(!mask[idx]||vis[idx]) continue;
+    let hd=0,tl=0; qx[tl]=xx; qy[tl]=y; tl++; vis[idx]=1; let x0=xx,x1=xx,y0=y,y1=y,cnt=0;
+    while(hd<tl){
+      const cx=qx[hd], cy=qy[hd]; hd++; cnt++;
+      if(cx<x0)x0=cx; if(cx>x1)x1=cx; if(cy<y0)y0=cy; if(cy>y1)y1=cy;
+      for(const [nx,ny] of [[cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]]){
+        if(nx<0||ny<0||nx>=w||ny>=h) continue; const ni=ny*w+nx;
+        if(mask[ni] && !vis[ni]){ vis[ni]=1; qx[tl]=nx; qy[tl]=ny; tl++; }
       }
-      ctx.putImageData(imgData,0,0);
-      resolve(c.toDataURL('image/png'));
-    };
-    img.src = dataUrl;
+    }
+    if(cnt<=w*h*0.002) continue;                                           // noise
+    const bw=x1-x0+1, bh=y1-y0+1, ratio=Math.max(bw,bh)/Math.max(1,Math.min(bw,bh));
+    if(Math.min(bw,bh)<16 || ratio>10) continue;                           // sliver / reflection edge
+    if(bw*bh > 0.6*w*h) continue;                                          // background mis-flagged as a card
+    boxes.push({x0:x0/s, y0:y0/s, x1:(x1+1)/s, y1:(y1+1)/s});
+  }
+  return boxes;
+}
+// Cluster blobs into rows by vertical-center proximity.
+function ocrGroupRows(boxes){
+  const bs = boxes.map(b=>({...b, w:b.x1-b.x0, h:b.y1-b.y0, cy:(b.y0+b.y1)/2})).sort((a,b)=>a.cy-b.cy);
+  const rs = [];
+  bs.forEach(b=>{
+    const r = rs[rs.length-1];
+    if(r && Math.abs(b.cy-r.cy) < 0.5*Math.max(b.h,r.h)){
+      r.items.push(b); r.cy = r.items.reduce((a,v)=>a+v.cy,0)/r.items.length; r.h = r.items.reduce((a,v)=>a+v.h,0)/r.items.length;
+    } else rs.push({items:[b], cy:b.cy, h:b.h});
+  });
+  return rs;
+}
+// Per row: squarest blob = number, widest = name. A lone blob is a number if its aspect ratio < 1.5.
+function ocrClassify(rs){
+  return rs.map(r=>{
+    const it = r.items.map(b=>({...b, ar:b.w/b.h}));
+    let num=null, name=null;
+    if(it.length===1){ if(it[0].ar<1.5) num=it[0]; else name=it[0]; }
+    else { const s=it.slice().sort((a,b)=>a.ar-b.ar); num=s[0]; name=s[s.length-1]; }
+    return { num, name, numText:'', nameText:'', numConf:null, nameConf:null };
   });
 }
-// OCR text is dropped into the shared paste textarea/panel — same toggle, same Preview/Add flow as
-// manual paste — rather than its own structured review UI, so all three import sources (paste, image,
-// scan) go through one review surface.
-function runOCRAndReview(dataUrl, teamKey){
-  state.sheet = { outcome:'SCAN_LOADING' };
-  render();
-  if(typeof Tesseract === 'undefined'){ state.sheet = null; render(); alert(t('scan_fail')); return; }
-  preprocessForOCR(dataUrl).then(processedUrl=>{
-    return Tesseract.recognize(processedUrl, 'eng', {}, { tessedit_pageseg_mode: '6' });
-  }).then(({data:{text}})=>{
-    state.sheet = null;
-    state.setupTeam = teamKey;
-    state.pasteDraftText = (text||'').trim();
-    state.pastePanelOpen = true;
-    render();
-  }).catch(()=>{
-    state.sheet = null; render();
-    alert(t('scan_fail'));
-  });
+
+// ---- scan button handlers ----
+// A scan never leaves the crop sheet: the result is shown inline (read-only) so different options can
+// be tried on the same crop; "Ok" is what commits it to the paste textarea.
+function ocrFail(prevSheet){ state.sheet = prevSheet; render(); alert(t('scan_fail')); }
+function ocrShowResult(prevSheet, text, note, jerseyFirst){
+  prevSheet.scanResult = { text:(text||'').trim(), note, jerseyFirst:!!jerseyFirst };
+  state.sheet = prevSheet; render();
+  setTimeout(()=>{ const el = document.getElementById('scanResult'); if(el) el.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 50);
+}
+function scanResultOk(){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP' || !s.scanResult || !s.scanResult.text) return;
+  state.setupTeam = s.teamKey;
+  state.pasteDraftText = s.scanResult.text; state.pastePanelOpen = true; state.pastePreviewShown = true;
+  if(s.scanResult.jerseyFirst) state.importFirstNumberMeaning = 'jersey'; // row numbers come from number tiles = jersey numbers; row order = batting order
+  state.sheet = null; render();
+  setTimeout(()=>{ const el = document.getElementById('pastePanel'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); }, 50);
+}
+async function scanRunDirect(){
+  const prev = state.sheet; if(!prev || prev.outcome!=='SCAN_CROP') return;
+  if(typeof Tesseract === 'undefined'){ alert(t('scan_fail')); return; }
+  prev.detected = null;
+  let src = scanCropWorkCanvas();
+  state.sheet = { outcome:'SCAN_LOADING' }; render(); await ocrTick();
+  try{
+    const big = Math.max(src.width, src.height);
+    if(big > OCR_DIRECT_MAX_SIDE){
+      const k = OCR_DIRECT_MAX_SIDE/big, c = document.createElement('canvas');
+      c.width = Math.round(src.width*k); c.height = Math.round(src.height*k); c.getContext('2d').drawImage(src,0,0,c.width,c.height); src = c;
+    }
+    const url = ocrCropBox(src, {x0:0,y0:0,x1:src.width,y1:src.height}, {band:false, minPx:4, floor:0.3});
+    const w = await getOcrWorker();
+    await w.setParameters({ tessedit_pageseg_mode:OCR_PSM, tessedit_char_whitelist:OCR_WL_BOTH });
+    ocrStatus(t('scan_reading')); await ocrTick();
+    const { data } = await w.recognize(url);
+    const text = (data.text||'').trim();
+    ocrShowResult(prev, text, text ? '' : t('scan_no_text'), false);
+  }catch(e){ console.error(e); ocrFail(prev); }
+}
+async function scanRunRows(){
+  const prev = state.sheet; if(!prev || prev.outcome!=='SCAN_CROP') return;
+  if(typeof Tesseract === 'undefined'){ alert(t('scan_fail')); return; }
+  const src = scanCropWorkCanvas(), picked = (prev.pickedColors||[]).slice();
+  state.sheet = { outcome:'SCAN_LOADING' }; render(); await ocrTick();
+  try{
+    ocrStatus(t('scan_detecting')); await ocrTick();
+    const rows = ocrClassify(ocrGroupRows(ocrDetectBoxes(src, picked, OCR_THRESH)));
+    const ox = src.ox||0, oy = src.oy||0, shift = b=> b ? { x0:b.x0+ox, y0:b.y0+oy, x1:b.x1+ox, y1:b.y1+oy } : null;
+    prev.detected = rows.map(r=>({ num:shift(r.num), name:shift(r.name) }));
+    if(!rows.length){ ocrShowResult(prev, '', t('scan_no_rows'), true); return; }
+    const numJobs=[], nameJobs=[];
+    rows.forEach(r=>{
+      if(r.num) numJobs.push({ url: ocrCropBox(src, r.num), set:(tx,cf)=>{ r.numText = tx.replace(/\D/g,''); r.numConf = cf; } });
+      if(r.name) nameJobs.push({ url: ocrCropBox(src, r.name), set:(tx,cf)=>{ r.nameText = tx; r.nameConf = cf; } });
+    });
+    const w = await getOcrWorker();
+    const pass = async (jobs, label, wl)=>{
+      await w.setParameters({ tessedit_pageseg_mode:OCR_PSM, tessedit_char_whitelist:wl });
+      for(let i=0;i<jobs.length;i++){
+        ocrStatus(`${label} ${i+1}/${jobs.length}…`); await ocrTick();
+        const { data } = await w.recognize(jobs[i].url);
+        jobs[i].set(data.text.trim().replace(/\s+/g,' '), data.confidence);
+      }
+    };
+    await pass(numJobs, t('scan_numbers'), OCR_WL_NUM);
+    await pass(nameJobs, t('scan_names'), OCR_WL_NAME);
+    const text = rows.map(r=>[r.numText.trim(), r.nameText.trim()].filter(Boolean).join(' ')).filter(Boolean).join('\n');
+    const low = rows.filter(r=>(r.numConf!=null&&r.numConf<60)||(r.nameConf!=null&&r.nameConf<60)).length;
+    const note = text ? `${rows.length} ${t('scan_note_rows')}${low?` · ${low} ${t('scan_note_low')}`:''}` : t('scan_no_text');
+    ocrShowResult(prev, text, note, true);
+  }catch(e){ console.error(e); ocrFail(prev); }
 }
 function addToLineup(key, id){
   pushHistory();
@@ -2945,29 +3245,47 @@ function renderSheet(){
   const s = state.sheet;
   if(!s) return '';
   if(s.outcome==='SCAN_CROP'){
-    const hintParts = t('scan_crop_hint').split('|');
+    const picked = s.pickedColors||[];
+    const activeStyle = 'border-color:var(--field-2);background:#F0F7F3;';
+    const res = s.scanResult;
     return `
     <div class="sheet-backdrop"></div>
     <div class="sheet tall">
       <h3>${t('scan_crop_title')}</h3>
-      <div class="sub" style="font-size:11px;color:#8C8570;margin-bottom:2px;">${hintParts[0]}</div>
-      <div class="sub" style="font-size:11px;color:#8C8570;margin-bottom:10px;">${hintParts[1]||''}</div>
-      <div id="scanCropWrap" style="position:relative; touch-action:none; display:flex; justify-content:center;">
-        <canvas id="scanCropCanvas" style="max-width:100%; max-height:42vh; width:auto; height:auto; border-radius:8px; border:1.5px solid var(--line); cursor:crosshair;"></canvas>
+      <div class="sub" style="font-size:11px;color:#8C8570;margin-bottom:10px;">${t('scan_crop_hint')}</div>
+      <div id="scanCropWrap" style="position:relative; display:flex; justify-content:center;">
+        <canvas id="scanCropCanvas" style="touch-action:none; max-width:100%; max-height:42vh; width:auto; height:auto; border-radius:8px; border:1.5px solid var(--line);"></canvas>
       </div>
-      <div class="row" style="margin-top:10px;">
-        <button class="btn ghost small" onclick="scanCropRotate90(-1)">⟲ ${t('btn_rotate_left')}</button>
-        <button class="btn ghost small" onclick="scanCropRotate90(1)">⟳ ${t('btn_rotate_right')}</button>
-      </div>
-      <label style="margin-top:8px;">${t('lbl_fine_tilt')}: <span id="scanTiltVal">${s.tiltDeg||0}</span>°</label>
+      ${(s.detected && s.detected.length) ? `<div style="text-align:center;font-size:10.5px;color:#8C8570;margin-top:4px;">${t('scan_legend')}</div>` : ''}
+      <label style="margin-top:10px;">${t('lbl_fine_tilt')}: <span id="scanTiltVal">${s.tiltDeg||0}</span>°</label>
       <input type="range" min="-45" max="45" step="1" value="${s.tiltDeg||0}" style="width:100%;margin-bottom:6px;" oninput="scanCropTiltChange(this.value)">
-      <div class="row" style="margin-top:4px;">
-        <button class="btn ghost small" onclick="scanCropReset()">${t('btn_reset_crop')}</button>
-        <button class="btn ghost small" onclick="scanCropApplyCrop()">${t('btn_apply_crop')}</button>
+      <div class="row" style="justify-content:center; gap:6px;">
+        <button class="btn ghost small" style="flex:none;padding:7px 10px;" onclick="scanCropRotate90(-1)">⟲ ${t('btn_rotate_left')}</button>
+        <button class="btn ghost small" style="flex:none;padding:7px 10px;" onclick="scanCropReset()">${t('btn_reset_crop')}</button>
+        <button class="btn ghost small" style="flex:none;padding:7px 10px;" onclick="scanCropRotate90(1)">⟳ ${t('btn_rotate_right')}</button>
       </div>
-      <div class="row" style="margin-top:8px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-top:14px;">
+        <div style="flex:0 0 34%; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#8C8570; line-height:1.25;">${t('lbl_card_color')}</div>
+        <div class="row" style="flex:1;">
+          <button class="btn ghost small" style="${!picked.length&&!s.pickMode?activeStyle:''}" onclick="scanColorAuto()">${t('btn_color_auto')}</button>
+          <button class="btn ghost small" style="${s.pickMode?activeStyle:''}" onclick="scanColorPick()">${t('btn_color_pick')}</button>
+        </div>
+      </div>
+      ${picked.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 0;">${picked.map((c,i)=>`<span style="display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:14px;padding:3px 8px;font-size:11px;"><i style="width:14px;height:14px;border-radius:4px;border:1px solid #0003;display:inline-block;background:rgb(${c});"></i>rgb(${c})<a onclick="scanColorRemove(${i})" style="color:var(--clay);padding:0 2px;">✕</a></span>`).join('')}</div>` : ''}
+      ${s.pickMode ? `<div class="sub" style="font-size:11px;color:var(--clay);font-weight:700;margin-top:6px;">${t('scan_pick_hint')}</div>` : ''}
+      <div class="row" style="margin-top:10px;">
+        <button class="btn" onclick="scanRunDirect()">${t('btn_ocr_direct')}</button>
+        <button class="btn" onclick="scanRunRows()">${t('btn_ocr_rows')}</button>
+      </div>
+      ${res ? `
+      <div id="scanResult" style="margin-top:14px;border-top:1px dashed var(--line);padding-top:10px;">
+        <label>${t('scan_result_title')}</label>
+        ${res.note ? `<div style="font-size:11.5px;font-weight:700;margin-bottom:6px;color:${res.text?'#8C8570':'var(--clay)'};">${escapeHtml(res.note)}</div>` : ''}
+        ${res.text ? `<div style="white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12.5px;background:#FAF8F2;border:1px solid var(--line);border-radius:8px;padding:8px 10px;max-height:160px;overflow-y:auto;">${escapeHtml(res.text)}</div>` : ''}
+      </div>` : ''}
+      <div class="row" style="margin-top:14px;">
         <button class="btn ghost" onclick="scanCropCancel()">${t('btn_scan_retake')}</button>
-        <button class="btn clay" onclick="scanCropConfirm()">${t('btn_continue_scan')}</button>
+        <button class="btn" ${res&&res.text?'':'disabled'} onclick="scanResultOk()">${t('btn_ok')}</button>
       </div>
     </div>`;
   }
