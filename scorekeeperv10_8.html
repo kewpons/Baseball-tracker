@@ -1,0 +1,3180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Baseball Scorekeeper</title>
+<script data-goatcounter="https://kewpons.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+<style>
+  :root{
+    --field: #163C2C;
+    --field-2: #2D6A4F;
+    --field-3: #3A8464;
+    --paper: #F7F4EC;
+    --clay: #C9703F;
+    --clay-2: #E08A54;
+    --ink: #1C2621;
+    --amber: #FFB800;
+    --amber-2: #FFCB4D;
+    --line: #E4DFD0;
+    --shadow: 0 1px 2px rgba(28,38,33,0.06), 0 4px 14px rgba(28,38,33,0.06);
+  }
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html{ height:100%; }
+  body{ margin:0; padding:0; background:var(--paper); color:var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{ font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+  #app{ display:flex; flex-direction:column; min-height:100vh; }
+  /* Setup screen only: locks document scroll so Chrome's address bar can't animate mid-tap and drop clicks. */
+  html.scroll-locked{ overflow:hidden; }
+  html.scroll-locked body{ position:fixed; inset:0; overflow:hidden; }
+  html.scroll-locked #app{ height:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  /* Bottom padding so content clears the fixed tabbar/quickbar and the OS nav bar. */
+  :root{ --bottom-clearance: 82px; }
+  .screen.setup-pad{ padding-bottom: var(--bottom-clearance); }
+
+  .scoreboard{ background: linear-gradient(155deg, var(--field) 0%, #0E2A1F 100%); color: var(--paper); padding: 6px 14px 7px; position: sticky; top:0; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,0.28); }
+  .linescore{ width:100%; border-collapse:collapse; font-size:12px; }
+  .linescore th, .linescore td{ text-align:center; padding:4px 6px; }
+  .linescore th{ font-size:11px; opacity:0.55; font-weight:600; letter-spacing:0.03em; }
+  .linescore th:first-child{ opacity:1; }
+  .linescore td.team-name{ text-align:left; font-weight:700; white-space:nowrap; letter-spacing:0.01em; }
+  .linescore td.tot{ font-weight:800; color:var(--amber-2); border-left:1px solid rgba(255,255,255,0.18); }
+  .linescore td.active-col{ box-shadow: inset 0 0 0 2px var(--amber); border-radius:4px; font-weight:800; color:var(--amber-2); background:rgba(255,184,0,0.22); }
+  .linescore th .outs-wrap{ display:flex; gap:4px; align-items:center; justify-content:center; }
+  .out-dot{ width:9px; height:9px; border-radius:50%; border:1.5px solid var(--amber); transition:background 0.15s; }
+  .out-dot.on{ background:var(--amber); box-shadow:0 0 6px rgba(255,184,0,0.7); }
+
+  .quickbar{ position:fixed; left:0; right:0; bottom:38px; z-index:19; display:flex; gap:5px; padding:2px 3px; background:#EEEAE0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .quickbar button{ flex:1; background:#fff; border:none; color:var(--field); padding:11px 2px; border-radius:10px; font-size:10.5px; font-weight:700; box-shadow:var(--shadow); transition:transform 0.08s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em; }
+  .quickbar button:active{ transform:scale(0.95); }
+  .quickbar button.danger{ color:var(--clay); }
+  .quickbar button.save{ color:var(--field-2); }
+
+  .tabbar{ position: fixed; left:0; right:0; bottom:0; height:38px; z-index:20; display:flex; background: var(--ink); box-shadow: 0 -2px 10px rgba(0,0,0,0.25); box-sizing:border-box; }
+  .tab{ flex:1; text-align:center; padding:0 4px; color:#8FA098; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; font-weight:600; cursor:pointer; border-top:2px solid transparent; transition:color 0.15s; line-height:1.1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .tab.active{ color:var(--amber-2); border-top:2px solid var(--amber); }
+
+  .screen{ flex:1; padding: 16px 14px 14px; }
+  .screen.with-tabbar{ padding-bottom: var(--bottom-clearance); }
+  h2.section-title{ font-size:11.5px; text-transform:uppercase; letter-spacing:0.12em; color:#8C8570; font-weight:700; margin: 20px 0 9px; }
+  h2.section-title:first-child{ margin-top:0; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:15px; margin-bottom:12px; box-shadow:var(--shadow); }
+  label{ font-size:11.5px; color:#8C8570; text-transform:uppercase; letter-spacing:0.05em; font-weight:600; display:block; margin-bottom:5px;}
+  input[type=text], input[type=number], select{ width:100%; padding:12px; border:1.5px solid var(--line); border-radius:10px; font-size:15px; background:#FCFBF7; color:var(--ink); margin-bottom:10px; transition:border-color 0.15s; }
+  input[type=text]:focus, select:focus{ outline:none; border-color:var(--field-3); background:#fff; }
+  .row{ display:flex; gap:8px; }
+  .row > *{ flex:1; }
+  button{ font-family:inherit; cursor:pointer; border:none; transition:transform 0.08s, opacity 0.15s; }
+  button:active{ transform:scale(0.97); }
+  .btn{ background:var(--field); background:linear-gradient(155deg, var(--field-2), var(--field)); color:#fff; padding:13px 14px; border-radius:11px; font-size:14px; font-weight:700; min-height:48px; box-shadow:var(--shadow); letter-spacing:0.01em; }
+  .btn.clay{ background:linear-gradient(155deg, var(--clay-2), var(--clay)); }
+  .btn.ghost{ background:#fff; color:var(--field); border:1.5px solid var(--line); box-shadow:none; }
+  .btn.small{ padding:9px 11px; font-size:12px; min-height:auto; border-radius:8px; box-shadow:none; }
+  .btn.block{ width:100%; margin-top:6px; }
+  .btn:disabled{ opacity:0.35; box-shadow:none; }
+
+  .btn.compact{ padding:10px 6px; min-height:40px; font-size:12.5px; letter-spacing:0; }
+  .teamtabs{ display:flex; gap:8px; margin-bottom:10px; }
+  .teamtabs button{ flex:1; padding:9px; border-radius:9px; font-size:13px; font-weight:700; background:#fff; color:#8C8570; border:1.5px solid var(--line); box-shadow:none; }
+  .teamtabs button.active{ background:#F0F7F3; color:var(--field-2); border-color:var(--field-2); }
+
+  .spinner{ width:34px; height:34px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--field-2); margin:30px auto; animation:spin 0.8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .loading-text{ text-align:center; font-size:13px; color:#8C8570; font-weight:600; margin-bottom:30px; }
+
+  /* ---------- Pre-game roster editor (Batting Order / Bench, drag-to-reorder, import) ---------- */
+  .pg-teamname{ font-size:15px; margin-bottom:4px; margin-top:10px; }
+  .pg-teamname:disabled{ background:#EEEAE0; color:#8C8570; border-color:#DCD6C4; -webkit-text-fill-color:#8C8570; opacity:1; }
+  .import-row{ display:flex; gap:8px; margin-top:4px; }
+  .import-btn{ flex:1; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; background:#fff; border:1px solid var(--line); border-radius:8px; height:38px; font-size:11.5px; font-weight:600; color:#6b6552; box-shadow:none; }
+  .import-btn svg{ width:15px; height:15px; }
+  .import-btn.active{ border-color:var(--field-2); background:#F0F7F3; }
+  .btn.icon-btn{ display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+  .btn.icon-btn.tight-pad{ padding-left:6px; padding-right:6px; white-space:nowrap; }
+  .paste-panel{ margin-top:10px; border-top:1px dashed var(--line); padding-top:10px; }
+  .paste-panel textarea{ width:100%; min-height:148px; padding:10px; border:1.5px solid var(--line); border-radius:10px; font-size:13px; background:#FCFBF7; color:var(--ink); font-family:inherit; resize:vertical; margin-bottom:0; }
+  .paste-preview{ font-size:11.5px; color:#5B5648; background:#FAF8F2; border-radius:8px; padding:8px 10px; margin-top:8px; max-height:110px; overflow-y:auto; }
+  .paste-preview div{ padding:2px 0; }
+
+  .group-label{ display:flex; align-items:center; justify-content:space-between; margin:10px 0 0; }
+  .group-label:first-of-type{ margin-top:14px; }
+  .group-label span.txt{ font-size:13.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:var(--field-2); }
+  .group-label.bench span.txt{ color:var(--clay); }
+  .group-count{ font-size:12px; color:#A39C88; font-weight:700; }
+
+  .pg-roster-list{ border-radius:10px; padding-bottom:18px; min-height:20px; }
+  .pg-row-wrap{ display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+  .pg-row{ display:flex; align-items:center; gap:5px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:3px 6px; flex:1; min-width:0; touch-action:pan-y; }
+  .pg-row.pg-dragging{ opacity:0.35; }
+  .pg-drag-ghost{ position:fixed; z-index:50; pointer-events:none; box-shadow:0 8px 24px rgba(0,0,0,0.22); border-color:var(--amber); background:#FFFDF5; }
+  .pg-drop-line{ height:3px; background:var(--amber); border-radius:2px; margin:-3px 0 6px; }
+  .pg-grip{ flex:none; width:22px; height:32px; display:flex; align-items:center; justify-content:center; color:#B9B2A0; cursor:grab; touch-action:none; border-radius:6px; }
+  .pg-grip:active{ cursor:grabbing; color:var(--field-2); background:#F2EFE6; }
+  .pg-grip svg{ width:14px; height:18px; display:block; }
+  .pg-slot-num{ flex:none; width:24px; text-align:center; font-size:13px; font-weight:800; color:#8C8570; }
+  .pg-slot-num.pg-dash{ color:#C9C2AC; }
+  input.pg-num{ width:40px; flex:none; text-align:center; font-weight:700; padding:6px 2px; font-size:14px; border:1.5px solid var(--line); border-radius:7px; background:#FCFBF7; margin-bottom:0; }
+  input.pg-name{ flex:1 1 auto; min-width:0; width:0; padding:6px 8px; font-size:15px; border:1.5px solid var(--line); border-radius:7px; background:#FCFBF7; margin-bottom:0; }
+  .pg-icon-btn{ width:24px; height:24px; min-height:auto; border-radius:6px; font-size:12px; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--line); background:#F2EFE6; color:var(--ink); flex:none; padding:0; box-shadow:none; }
+  .pg-icon-btn.pg-remove{ color:var(--clay); border-color:var(--clay); background:#fff; }
+  .pg-icon-btn.pg-sub{ color:var(--field-2); border-color:var(--field-2); background:#fff; font-weight:900; }
+  .btn.pg-row-height{ height:38px; line-height:38px; padding:0 10px; min-height:auto; font-size:12px; font-weight:700; border-radius:8px; margin:0 0 4px; width:100%; }
+  .empty-slot{ font-size:11px; color:#C9C2AC; font-style:italic; padding:14px 4px; min-height:40px; display:flex; align-items:center; justify-content:center; text-align:center; border:1.5px dashed var(--line); border-radius:8px; }
+
+  .diamond-wrap{ display:flex; justify-content:center; padding: 6px 0 2px; }
+  .diamond-wrap svg{ width:75%; max-width:320px; height:auto; display:block; }
+  .diamond-wrap.compact{ padding:0 0 4px; margin-top:-4px; }
+  .diamond-inner{ position:relative; width:318px; max-width:88%; margin:0 auto; }
+  .diamond-inner svg{ width:100%; height:auto; display:block; overflow:visible; }
+  .corner-tag{ position:absolute; font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#6b6552; line-height:1.3; }
+  .corner-tag.br{ right:2%; bottom:4%; text-align:right; }
+  .corner-tag .outs{ display:flex; gap:3px; margin-top:3px; }
+  .corner-tag.br .outs{ justify-content:flex-end; }
+  .caption{ text-align:center; font-size:10px; color:#8a8373; margin:0 0 8px; }
+
+  .batter-name{ font-size:16px; font-weight:800; letter-spacing:-0.01em; }
+  .count-inline{ display:flex; align-items:baseline; gap:3px; font-family:ui-monospace,monospace; flex:none; }
+  .count-inline .cl{ font-size:11px; font-weight:800; color:#8C8570; }
+  .count-inline .cv{ font-size:15px; font-weight:800; color:var(--ink); }
+  .count-inline .sep{ font-size:12px; color:#C9C2AC; }
+  .count-inline .foul-badge{ font-size:10px; font-weight:700; color:var(--clay); margin-left:6px; background:#F7EBE3; padding:2px 7px; border-radius:8px; white-space:nowrap; }
+  .merged-card{ padding:10px 12px; margin-bottom:8px; }
+  .merged-top{ display:flex; justify-content:space-between; align-items:center; }
+  .merged-counts{ display:flex; align-items:center; gap:6px; margin-top:8px; border-top:1px dashed var(--line); padding-top:8px; }
+  .merged-counts .cbtn-grp{ display:flex; gap:3px; }
+  .outcome-row{ display:flex; gap:8px; margin-top:2px; align-items:flex-start; }
+  .outcome-col{ flex:1; display:flex; gap:5px; align-items:flex-start; min-width:0; }
+  .outcome-col > .grid-btns-2{ flex:1; }
+  .side-label{ writing-mode:vertical-rl; text-orientation:mixed; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:var(--field-2); flex:none; width:12px; display:flex; align-items:center; justify-content:center; align-self:stretch; }
+  .side-label.out{ color:var(--clay); }
+  .grid-btns-2{ display:grid; grid-template-columns:repeat(2,1fr); gap:6px; }
+  .grid-btns-2 button{ background:#fff; border:1.5px solid var(--field); color:var(--field); padding:7px 3px; border-radius:9px; font-size:11.5px; font-weight:700; line-height:1.15; min-height:40px; display:flex; align-items:center; justify-content:center; text-align:center; box-shadow:var(--shadow); }
+  .grid-btns-2 button:active{ background:var(--field); color:#fff; border-color:var(--field); }
+  .grid-btns-2.out-actions button{ border-color:var(--clay); color:var(--clay); }
+  .grid-btns-2.out-actions button:active{ background:var(--clay); color:#fff; border-color:var(--clay); }
+
+
+  .sheet-backdrop{ position:fixed; inset:0; background:rgba(15,20,17,0.45); z-index:30; backdrop-filter:blur(1px); }
+  .sheet{ position:fixed; left:0; right:0; bottom:0; background:#fff; border-radius:20px 20px 0 0; padding:14px 16px; z-index:31; max-height:85vh; max-height:85dvh; overflow-y:auto; box-shadow: 0 -8px 30px rgba(0,0,0,0.28); }
+  .sheet.tall{ max-height:96vh; max-height:96dvh; } /* dvh avoids Chrome address-bar clipping */
+  .sheet h3{ margin:0 0 12px; font-size:15px; font-weight:800; }
+  .runner-row{ border:1.5px solid var(--line); border-radius:10px; padding:8px; margin-bottom:6px; }
+  .out-badge{ width:20px; height:20px; border-radius:50%; background:var(--clay); color:#fff; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; flex:none; cursor:pointer; }
+  .out-badge.sel{ box-shadow:0 0 0 3px var(--amber); }
+  .runner-row .rname{ font-size:12px; font-weight:700; margin-bottom:5px; }
+  /* ---------- Standard sheet kit: header, field block, chips, banner, pinned action bar ---------- */
+  .sheet.has-bar{ padding-bottom:0; }
+  .sh-head{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin:0 0 8px; }
+  .sh-head h3{ margin:0; }
+  .sh-ctx{ font-size:11px; color:#8C8570; flex:none; }
+  .sh-sub{ font-size:11px; color:#8C8570; margin:0 0 8px; }
+  .sheet-actions{ position:sticky; bottom:0; display:flex; gap:8px; background:#fff; border-top:1px solid var(--line); margin:8px -16px 0; padding:8px 16px calc(12px + env(safe-area-inset-bottom,0px)); }
+  .sheet-actions .btn{ flex:1; min-height:42px; padding:10px 6px; font-size:13px; }
+  .sheet-actions .btn:not(.ghost){ flex:2; }
+  /* Chips: one size for every sheet button. sel = translucent green; out = orange outline (outs); adv = green outline (advances). */
+  .chips{ display:flex; gap:3px; }
+  .chip{ flex:1; min-width:0; height:40px; padding:0 2px; border-radius:9px; border:1.5px solid var(--line); background:#fff; color:var(--ink); font-size:12px; font-weight:600; white-space:nowrap; display:flex; align-items:center; justify-content:center; box-shadow:none; }
+  .chip.sel{ background:rgba(45,106,79,0.14); border-color:var(--field-2); color:var(--field-2); }
+  .chip.adv{ background:#fff; border-color:var(--field-2); color:var(--field-2); }
+  .chip.out{ background:#fff; border-color:var(--clay); color:var(--clay); }
+  .chip.out.sel{ background:rgba(201,112,63,0.16); }
+  .chip.num{ height:30px; border-radius:8px; background:#F2EFE6; } /* fielder 1-9: the only shaded buttons */
+  .chip.sq{ flex:none; width:40px; }
+  .chip.undo{ flex:none; padding:0 12px; }
+  .chip:active{ background:rgba(255,184,0,0.35); }
+  .chip:disabled{ opacity:0.35; }
+  .field-block{ display:flex; gap:10px; margin:0 0 8px; }
+  .fld{ flex:none; width:150px; }
+  .fld svg{ width:100%; height:auto; display:block; border-radius:6px; }
+  .fb-side{ flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; }
+  .banner{ border-radius:10px; padding:7px 8px; font-size:13px; font-weight:800; text-align:center; color:#fff; line-height:1.25; }
+  .banner b{ color:var(--amber-2); }
+  .banner.out{ background:var(--clay); }
+  .banner.ok{ background:var(--field); }
+  .banner.warn{ background:#F2D9CE; color:var(--clay); font-size:11.5px; }
+  .fb-note{ font-size:11px; color:#8C8570; text-align:center; }
+  .fb-note.score{ font-size:12px; font-weight:700; color:var(--clay); }
+  .x-badge{ display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; background:var(--clay); color:#fff; font-size:9px; font-weight:900; vertical-align:-2px; }
+  .legend{ display:grid; grid-template-columns:repeat(3,1fr); gap:2px 4px; font-size:11px; color:#8a8373; margin-top:auto; }
+  .ln{ display:flex; justify-content:space-between; align-items:center; gap:6px; margin:0 0 5px; }
+  .lbl{ font-size:11px; color:#8C8570; flex:none; width:40px; }
+  .seq{ font-family:ui-monospace,monospace; font-weight:800; font-size:13px; color:var(--field); }
+  .cnt{ display:flex; gap:14px; align-items:center; margin:0 0 8px; }
+  .cnt-grp{ display:inline-flex; align-items:center; gap:6px; font-size:12px; }
+  .cnt-grp b{ width:14px; text-align:center; font-family:ui-monospace,monospace; }
+  .pick-cols{ display:flex; gap:8px; align-items:flex-start; }
+  .pick-col{ flex:1; display:flex; flex-direction:column; gap:4px; }
+  .pick-head{ text-align:center; font-size:11px; font-weight:700; }
+  .pick-col .chip{ flex:none; }
+  .lineup-pick{ display:flex; justify-content:space-between; align-items:center; padding:12px; border:1.5px solid var(--line); border-radius:11px; margin-bottom:7px; font-weight:600; }
+  .lineup-pick.cur{ border-color:var(--amber); background:#FFF8E6; }
+
+  table.box{ width:100%; border-collapse:collapse; font-size:11.5px; }
+  table.box th, table.box td{ padding:7px 3px; text-align:center; border-bottom:1px solid var(--line); }
+  table.box th{ text-transform:uppercase; font-size:9.5px; color:#8C8570; font-weight:700; letter-spacing:0.02em; }
+  table.box td:first-child, table.box th:first-child{ text-align:left; }
+
+  /* ---------- Scorebook grid ---------- */
+  .grid-scroll{ overflow-x:auto; border-radius:10px; -webkit-overflow-scrolling:touch; }
+  .zoom-bar{ display:flex; align-items:center; gap:8px; margin-bottom:9px; }
+  .zoom-bar button{ width:34px; height:34px; border-radius:9px; border:1.5px solid var(--line); background:#fff; font-size:16px; font-weight:800; color:var(--field); box-shadow:var(--shadow); }
+  .zoom-bar .pct{ font-size:12px; font-weight:800; color:#8C8570; width:42px; text-align:center; }
+  .grid-inner{ transform-origin: top left; }
+  table.scorebook{ border-collapse:collapse; width:auto; }
+  table.scorebook th{ font-size:15px; text-transform:uppercase; color:#8C8570; font-weight:700; padding:6px 4px; text-align:center; border-bottom:2px solid var(--line); background:#fff; }
+  table.scorebook th.name-col{ text-align:left; width:96px; max-width:96px; }
+  table.scorebook td{ border:1px solid var(--line); padding:0; text-align:center; vertical-align:top; }
+  td.name-cell{ text-align:left; padding:5px 6px; background:#FAF8F2; font-size:12.5px; font-weight:700; white-space:normal; overflow-wrap:break-word; word-break:break-word; line-height:1.25; width:96px; max-width:96px; }
+  td.box-cell{ width:84px; height:84px; position:relative; }
+  td.box-cell.current{ background:#FFF8E6; box-shadow: inset 0 0 0 2px var(--amber); cursor:pointer; }
+  td.box-cell.filled{ cursor:pointer; }
+  td.box-cell.filled:active{ background:#F2EFE6; }
+  .box-inner{ position:relative; width:100%; height:100%; }
+  .box-tl{ position:absolute; top:1px; left:3px; font-size:12px; font-weight:800; color:var(--field-2); z-index:2; }
+  .box-tr{ position:absolute; top:1px; right:3px; font-size:10.5px; color:#A39C88; font-family:ui-monospace,monospace; z-index:2; }
+  .box-bl{ position:absolute; bottom:1px; left:3px; font-size:11px; font-weight:800; color:var(--clay); z-index:2; }
+  .box-br{ position:absolute; bottom:1px; right:3px; width:21px; height:21px; border-radius:50%; background:var(--clay); color:#fff; font-size:13.5px; font-weight:800; display:flex; align-items:center; justify-content:center; z-index:2; }
+  .sb-detail-row{ display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px dashed var(--line); font-size:13px; }
+  .sb-detail-row:last-child{ border-bottom:none; }
+  @media print{
+    .scoreboard, .quickbar, .tabbar, .sheet, .sheet-backdrop, .btn.clay.block, .grid-print-hide{ display:none !important; }
+    html,body{ position:static; overflow:visible; height:auto; }
+    #app{ overflow:visible; height:auto; }
+    body, .screen{ padding:0; background:#fff; }
+    .card{ box-shadow:none; border:1px solid #ccc; }
+  }
+
+  .log{ font-size:12px; color:#5B5648; max-height:160px; overflow-y:auto; }
+  .log div{ padding:4px 0; border-bottom:1px dashed var(--line); }
+  .pill{ display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; background:var(--field); color:#fff; }
+  .pill.out{ background:var(--clay); }
+  .pill.safe{ background:var(--field-2); }
+  .empty-note{ font-size:13px; color:#A39C88; text-align:center; padding:22px 0; font-weight:500; }
+  .gameover-banner{ background:linear-gradient(155deg, var(--field-2), var(--field)); color:#fff; padding:16px 14px; border-radius:14px; text-align:center; margin-bottom:12px; box-shadow:var(--shadow); border:2px solid var(--amber); }
+  .gameover-banner .go-title{ font-size:11px; text-transform:uppercase; letter-spacing:0.14em; opacity:0.8; font-weight:700; margin-bottom:10px; }
+  .gameover-banner .go-score-row{ display:flex; align-items:center; justify-content:center; gap:10px; }
+  .gameover-banner .go-team{ flex:1; min-width:0; font-size:12.5px; font-weight:700; opacity:0.92; line-height:1.25; overflow-wrap:break-word; }
+  .gameover-banner .go-score{ flex:none; font-size:32px; font-weight:900; font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; letter-spacing:0.01em; color:var(--amber-2); padding:0 4px; }
+</style>
+</head>
+<body>
+<svg id="fieldDefs" width="0" height="0" style="position:absolute" aria-hidden="true"></svg>
+<div id="app"></div>
+<div id="sheetRoot"></div>
+<script>
+// ---------------- LAZY LIBRARY LOADER ----------------
+// Libraries load on first use (Export Image / Scan / HEIC), not at page load.
+const LIB_URLS = {
+  html2canvas:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+  Tesseract:'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js',
+  heic2any:'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js'
+};
+const libPromises = {};
+function loadLib(name){
+  if(window[name]) return Promise.resolve(window[name]);
+  if(!libPromises[name]) libPromises[name] = new Promise((res,rej)=>{
+    const el = document.createElement('script');
+    el.src = LIB_URLS[name];
+    el.onload = ()=>res(window[name]);
+    el.onerror = ()=>{ delete libPromises[name]; rej(new Error('Failed to load '+name)); }; // allow retry
+    document.head.appendChild(el);
+  });
+  return libPromises[name];
+}
+
+// Shared sheet chrome: dismiss-on-tap backdrop and the standard Cancel/Close button.
+const SHEET_BACKDROP = '<div class="sheet-backdrop" onclick="state.sheet=null;render()"></div>';
+
+// ---------------- STATE ----------------
+function makeDefaultPlayers(){ return Array.from({length:9}, ()=>({id:uid(), name:'', num:'', group:'lineup'})); }
+function uid(){ return 'p'+Math.random().toString(36).slice(2,9); }
+function newTeam(name){ return { name, players: makeDefaultPlayers(), lineup: [], battingIdx:0, stats:{}, pitchStats:{}, currentPitcherId:null, subHistory:{} }; }
+
+const APP_VERSION = '10.8';
+// 16px icon from Material Symbols / Material Icons (Apache 2.0): path d, optional viewBox.
+const icon = (d, vb='0 0 24 24')=>`<svg width="16" height="16" viewBox="${vb}" fill="currentColor" style="flex:none;"><path d="${d}"/></svg>`;
+// "document_scanner": used on the roster Scan button.
+const SCAN_ICON = icon('M2 6V1h5v2H4v3Zm18 0V3h-3V1h5v5ZM2 23v-5h2v3h3v2Zm15 0v-2h3v-3h2v5ZM7 20q-.825 0-1.412-.587Q5 18.825 5 18V6q0-.825.588-1.412Q6.175 4 7 4h10q.825 0 1.413.588Q19 5.175 19 6v12q0 .825-.587 1.413Q17.825 20 17 20Zm2-10h6V8H9Zm0 3h6v-2H9Zm0 3h6v-2H9Z');
+// "photo_library": used on the roster "From Image" button.
+const LIBRARY_ICON = icon('M20 4v12H8V4h12m0-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 9.67 1.69 2.26 2.48-3.1L19 15H9zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z');
+// "content_copy": used on the roster "Paste List" button.
+const PASTE_ICON = icon('M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z');
+// "save": Roster tab Save Game button.
+const SAVE_ICON = icon('M21 7v12q0 .825-.587 1.413Q19.825 21 19 21H5q-.825 0-1.413-.587Q3 19.825 3 19V5q0-.825.587-1.413Q4.175 3 5 3h12Zm-2 .85L16.15 5H5v14h14ZM12 18q1.25 0 2.125-.875T15 15q0-1.25-.875-2.125T12 12q-1.25 0-2.125.875T9 15q0 1.25.875 2.125T12 18Zm-6-8h9V6H6ZM5 7.85V19 5Z');
+// "file_open": Roster tab Load Game button.
+const LOAD_ICON = icon('M6 22q-.825 0-1.412-.587Q4 20.825 4 20V4q0-.825.588-1.413Q5.175 2 6 2h8l6 6v6h-2V9h-5V4H6v16h9v2Zm15.95.375L19 19.425v2.225h-2V16h5.65v2H20.4l2.95 2.95ZM6 20V4v16Z');
+// "picture_as_pdf": Scorebook tab Print/PDF button.
+const PDF_ICON = icon('M9 13h1v-2h1q.425 0 .713-.288Q12 10.425 12 10V9q0-.425-.287-.713Q11.425 8 11 8H9Zm1-3V9h1v1Zm3 3h2q.425 0 .713-.288Q16 12.425 16 12V9q0-.425-.287-.713Q15.425 8 15 8h-2Zm1-1V9h1v3Zm3 1h1v-2h1v-1h-1V9h1V8h-2Zm-9 5q-.825 0-1.412-.587Q6 16.825 6 16V4q0-.825.588-1.413Q7.175 2 8 2h12q.825 0 1.413.587Q22 3.175 22 4v12q0 .825-.587 1.413Q20.825 18 20 18Zm-4 4q-.825 0-1.412-.587Q2 20.825 2 20V6h2v14h14v2Z');
+// "image": Scorebook tab Export Image button.
+const IMAGE_ICON = icon('M5 21q-.825 0-1.413-.587Q3 19.825 3 19V5q0-.825.587-1.413Q4.175 3 5 3h14q.825 0 1.413.587Q21 4.175 21 5v14q0 .825-.587 1.413Q19.825 21 19 21Zm0-2h14V5H5v14Zm1-2h12l-3.75-5-3 4L9 13Zm-1 2V5v14Z');
+// "csv": Box Score tab Export CSV button.
+const CSV_ICON = icon('M221-357h127v-50H238v-146h110v-50H221q-14.02 0-23.51 9.78Q188-583.45 188-569v179q0 14.02 9.49 23.51Q206.98-357 221-357Zm166 0h137q14.03 0 23.51-9.49Q557-375.98 557-390v-78q0-13-9.49-22-9.48-9-23.51-9h-87v-54h120v-50H420q-14.02 0-23.51 9.49Q387-584.03 387-570v78q0 14 9.49 23.5T420-459h87v52H387v50Zm271 0h57l75-246h-50l-53 183-47-183h-50l68 246ZM140-160q-24 0-42-18t-18-42v-520q0-24 18-42t42-18h680q24 0 42 18t18 42v520q0 24-18 42t-42 18H140Zm0-60h680v-520H140v520Zm0 0v-520 520Z', '0 -960 960 960');
+// Drag handle (6-dot grip) — pre-game Batting Order / Bench rows only.
+const GRIP_ICON = '<svg viewBox="0 0 12 20" fill="currentColor"><circle cx="3" cy="3" r="1.6"/><circle cx="9" cy="3" r="1.6"/><circle cx="3" cy="10" r="1.6"/><circle cx="9" cy="10" r="1.6"/><circle cx="3" cy="17" r="1.6"/><circle cx="9" cy="17" r="1.6"/></svg>';
+let state = {
+  screen: 'setup',
+  setupError: null,
+  setupTeam: 'us',
+  scorebookTeam: 'us',
+  scorebookZoom: 1, // index into ZOOM_STEPS
+  lang: 'en',
+  firstBatting: 'us',     // team key that bats in the top half of each inning ('us' or 'them')
+  trackPitching: false,
+  gameStarted: false,
+  gameOver: false,
+
+  teams: { us: newTeam('Team A'), them: newTeam('Team B') },
+
+  inning: 1,
+  half: 'top',
+  outs: 0,
+  bases: {1:null, 2:null, 3:null},
+  innings: { us: [], them: [] },
+
+  log: [],
+  sheet: null,
+  history: [],
+  count: {balls:0, strikes:0, fouls:0},
+  scorebook: {},   // key `${teamKey}_${playerId}_${inning}` -> array of plate-appearance box entries
+  // key `${teamKey}_${inning}_${battingIdx}` -> times that lineup SLOT has batted this inning. Per-slot (not per-player)
+  // so a sub continues the outgoing player's count (right scorebook column, e.g. "1'").
+  slotSubIndex: {},
+  pendingBatterOut: null,
+  pendingBatterOutAt: null,
+  pendingBatterSeq: null,
+  pendingOutOrder: null,
+
+  importFirstNumberMeaning: 'order', // 'order' | 'jersey' — meaning of the first bare number in pasted/scanned text
+  pasteDraftText: '',
+  pastePanelOpen: false,
+  pastePreviewShown: false
+};
+
+// ---------------- I18N ----------------
+const STRINGS = {
+  en: {
+    tab_roster:'Roster', tab_live:'Live', tab_scorebook:'Scorebook', tab_box:'Box Score',
+    hdr_save_load:'Save / Load Game', btn_save_game:'Save Game', btn_load_game:'Load Game',
+    save_load_hint:'Save downloads a file with the full game state — scores, stats, rosters, everything. Load it later (even on another device) to pick up right where you left off. Loading replaces whatever is currently on screen.',
+    hdr_settings:'Game Settings',
+    lbl_first_bat:'Who bats first (top of inning 1)',
+    lbl_pitching:'Pitching stats', btn_track_pitching:'Track pitching', btn_no_pitching:'No pitcher tracking',
+    hdr_rosters:'Rosters', btn_add_row:'+ Add Row', btn_start_game:'Start Game',
+    btn_scan:'Scan', btn_from_image:'Image', btn_paste:'Text', quick_import:'Import Players Details',
+    paste_placeholder:'Example (Batting Order first):\n1 Shohei Ohtani\n2 17 Aaron Judge\n\nNames only:\nShohei Ohtani\nAaron Judge',
+    btn_paste_preview:'Preview', btn_paste_add:'Add',
+    lbl_first_number_is:'First number is:', btn_first_num_order:'Batting Order', btn_first_num_jersey:'Jersey #',
+    hdr_batting_order:'Batting Order', hdr_bench:'Bench',
+    lineup_empty:'Drag or add a player here to build the batting order', bench_empty:'No bench players',
+    ocr_tip:"Tip: Take a photo of the batting order, copy jersey numbers and names using your phone's built-in text recognition, and paste into Text here.",
+    rosters_from_rows_note:'Rosters will be created based on rows in Batting Order and Bench, including empty rows.',
+    quick_start_note:'<b>Quick Start:</b> set the number of rows per team and press Start Game',
+    scan_crop_title:'Crop & Straighten', scan_crop_hint:'Adjust the frame to crop tightly around the desired area, and straighten as much as possible — helps make scanning more accurate.',
+    btn_rotate_left:'Rotate Left', btn_rotate_right:'Rotate Right', lbl_fine_tilt:'Fine tilt adjustment',
+    btn_ocr_direct:'Scan Text', btn_ocr_rows:'Scan Tags', lbl_card_color:'Tag colour recognition', btn_color_auto:'Auto', btn_color_pick:'+ Pick color',
+    scan_pick_hint:'Tap a tag on the photo to sample its color…', scan_legend:'Blue = number · Red = name', paste_preview_hint:'Tap Preview to check how rows will be imported.', confirm_big_lineup:'This will create a batting order of {n} batters. Continue?',
+    btn_ok:'Ok', scan_result_title:'Scan result', scan_no_text:'No text found. Adjust the crop, or try the other scan.', scan_note_rows:'rows read', scan_note_low:'low confidence — check the text', btn_paste_clear:'Clear',
+    scan_reading:'Reading text…', scan_detecting:'Detecting rows…', scan_numbers:'Numbers', scan_names:'Names', scan_no_rows:'No tags found. Adjust the crop or pick the tag color.',
+    btn_reset_crop:'Reset',
+    scan_loading_title:'Scanning photo…', scan_loading_sub:'Reading jersey numbers and names', scan_loading_note:'This can take a few seconds on mobile',
+    btn_scan_retake:'Cancel', scan_fail:'Could not read that image. Try a clearer, well-lit photo.',
+    grp_on_base_short:'On Base', grp_out_short:'Out',
+    btn_undo:'↺ Undo', btn_batter:'Batter', btn_save:'Save', btn_end_half:'End ½ Inn', btn_end_game:'End Game',
+    btn_export_csv:'Export Page to CSV', hdr_play_log:'Play Log',
+    btn_print_pdf:'Print / Save as PDF', btn_export_img:'Export as Image',
+    hdr_batting:'Batting', hdr_pitching:'Pitching',
+    out_hbp:'Hit by Pitch', out_e:'Error',
+    out_k:'Strikeout', out_go:'Ground Out', out_fo:'Fly Out', out_pu:'Pop Out',out_sf:'Sac Fly', out_sac:'Sac Bunt',
+    live_tap_runner:'tap a runner to record a steal, pickoff, or advance',
+    live_tap_pitcher:'tap the mound to change pitcher',
+    sb_tap_hint:'Tap the amber box to enter the at-bat now up; tap any filled box to review that play (or zoom in for a closer look).',
+    sb_legend_inning:'Inning number: a prime mark (2\u2019, 3\u2019\u2026) means the lineup looped back around within that inning.',
+    sb_legend_hit_bases:'Top-left of box: total bases on a hit.',
+    sb_legend_count:'Top-right of box: ball-strike count.',
+    sb_legend_out_num:'Bottom-right of box: circled number = which out of the inning.',
+    sb_legend_path:'Diamond path: turns green up to the base reached \u2014 fully gold if a run scored.',
+    sb_legend_sb:'Dashed green leg: stolen base (SB).',
+    sb_legend_cs_po:'Dashed amber leg: caught stealing or picked off (CS/PO).',
+    sb_legend_batter_num:'Small circled number on a leg: the batter who was up when that base was reached.',
+    sb_legend_lob:'Cursive "l": runner left on base when the inning ended.',
+    btn_your_team_tab:'Team A', btn_opponent_tab:'Team B'
+  },
+  ja: {
+    tab_roster:'名簿', tab_live:'ライブ', tab_scorebook:'スコアブック', tab_box:'ボックススコア',
+    hdr_save_load:'試合の保存・読込', btn_save_game:'試合を保存', btn_load_game:'試合を読込',
+    save_load_hint:'保存すると、スコア・成績・名簿など試合の全データを含むファイルがダウンロードされます。後で（別の端末でも）読み込めば、続きから再開できます。読み込むと現在の画面の内容は上書きされます。',
+    hdr_settings:'試合設定',
+    lbl_first_bat:'先攻（1回表の攻撃）',
+    lbl_pitching:'投手成績', btn_track_pitching:'投手成績を記録', btn_no_pitching:'投手成績を記録しない',
+    hdr_rosters:'名簿', btn_add_row:'+ 行を追加', btn_start_game:'試合開始',
+    btn_scan:'スキャン', btn_from_image:'画像', btn_paste:'テキスト', quick_import:'選手情報を取り込む',
+    paste_placeholder:'例（打順が先）：\n1 大谷翔平\n2 17 ジャッジ\n\n名前のみ：\n大谷翔平\nジャッジ',
+    btn_paste_preview:'プレビュー', btn_paste_add:'追加',
+    lbl_first_number_is:'先頭の数字は：', btn_first_num_order:'打順', btn_first_num_jersey:'背番号',
+    hdr_batting_order:'打順', hdr_bench:'ベンチ',
+    lineup_empty:'ここに選手をドラッグ、または追加して打順を作成', bench_empty:'ベンチの選手はいません',
+    ocr_tip:'ヒント：打順表を撮影し、スマートフォン内蔵の文字認識機能で背番号と名前をコピーして、ここの「テキスト」に貼り付けてください。',
+    rosters_from_rows_note:'名簿は打順とベンチの行数（空欄も含む）に基づいて作成されます。',
+    quick_start_note:'<b>クイックスタート：</b>各チームの行数を設定して「試合開始」を押してください',
+    scan_crop_title:'切り抜き・傾き補正', scan_crop_hint:'枠を調整して必要な部分だけを囲むように切り抜き、できるだけ傾きを直してください。スキャンの精度が上がります。',
+    btn_rotate_left:'左に回転', btn_rotate_right:'右に回転', lbl_fine_tilt:'傾きの微調整',
+    btn_ocr_direct:'テキストをスキャン', btn_ocr_rows:'タグをスキャン', lbl_card_color:'タグの色認識', btn_color_auto:'自動', btn_color_pick:'＋色を選択',
+    scan_pick_hint:'写真上のタグをタップして色を取得…', scan_legend:'青＝背番号 · 赤＝名前', paste_preview_hint:'「プレビュー」を押すと取り込み内容を確認できます。', confirm_big_lineup:'{n}人の打順を作成します。よろしいですか？',
+    btn_ok:'OK', scan_result_title:'スキャン結果', scan_no_text:'テキストが見つかりません。切り抜きを調整するか、もう一方のスキャンをお試しください。', scan_note_rows:'行を読み取りました', scan_note_low:'信頼度が低い行があります。内容を確認してください', btn_paste_clear:'クリア',
+    scan_reading:'文字を認識中…', scan_detecting:'行を検出中…', scan_numbers:'背番号', scan_names:'名前', scan_no_rows:'タグが見つかりません。切り抜きを調整するか、タグの色を選択してください。',
+    btn_reset_crop:'リセット',
+    scan_loading_title:'写真を読み取り中…', scan_loading_sub:'背番号と名前を認識しています', scan_loading_note:'モバイルでは数秒かかることがあります',
+    btn_scan_retake:'キャンセル', scan_fail:'画像を読み取れませんでした。より鮮明で明るい写真でお試しください。',
+    grp_on_base_short:'出塁', grp_out_short:'アウト',
+    btn_undo:'↺ 元に戻す', btn_batter:'打者', btn_save:'保存', btn_end_half:'半回終了', btn_end_game:'試合終了',
+    btn_export_csv:'ページをCSV出力', hdr_play_log:'プレー記録',
+    btn_print_pdf:'印刷 / PDF保存', btn_export_img:'画像として保存',
+    hdr_batting:'打撃成績', hdr_pitching:'投手成績',
+    out_hbp:'死球',out_e:'エラー',
+    out_k:'三振', out_go:'ゴロアウト', out_fo:'フライアウト', out_pu:'ポップアウト',out_sf:'犠飛', out_sac:'犠打',
+    live_tap_runner:'走者をタップすると盗塁・けん制・進塁を記録できます',
+    live_tap_pitcher:'マウンドをタップすると投手を交代できます',
+    sb_tap_hint:'今の打者にはオレンジ色のマスをタップして入力します。記入済みのマスをタップするとその打席を確認できます（拡大するとさらに見やすくなります）。',
+    sb_legend_inning:'イニング番号：プライム記号（2\u2019、3\u2019…）は同じイニング内で打順が一巡したことを示します。',
+    sb_legend_hit_bases:'マス左上：安打での進塁数。',
+    sb_legend_count:'マス右上：ボール・ストライクカウント。',
+    sb_legend_out_num:'マス右下：丸囲みの数字はそのイニング何個目のアウトか。',
+    sb_legend_path:'ダイヤモンドの線：到達した塁まで緑になり、得点した場合は全体が金色になります。',
+    sb_legend_sb:'緑の破線：盗塁（SB）。',
+    sb_legend_cs_po:'オレンジの破線：盗塁死または牽制死（CS/PO）。',
+    sb_legend_batter_num:'塁の脇の丸囲みの数字：その塁に到達した時の打者。',
+    sb_legend_lob:'筆記体の「l」：そのイニング終了時に残塁した走者。',
+    btn_your_team_tab:'Aチーム', btn_opponent_tab:'Bチーム'
+  }
+};
+function t(key){ return (STRINGS[state.lang] && STRINGS[state.lang][key]) || STRINGS.en[key] || key; }
+// Bold label reusing existing terms so EN/JA wording matches the rest of the app.
+function pasteLabelHTML(){
+  if(state.lang==='ja') return `<b>打順</b>・<b>名前</b>・<b>背番号</b>を貼り付け`;
+  return `Paste <b>Batting Order</b> and/or <b>Names</b> and/or <b>Jersey Number</b>`;
+}
+function setLang(lang){ state.lang = lang; render(); }
+
+function team(key){ return state.teams[key]; }
+function ensureStats(key,id){ const t=team(key); if(!t.stats[id]) t.stats[id]={AB:0,R:0,H:0,d2:0,d3:0,HR:0,RBI:0,BB:0,HBP:0,SO:0,SB:0,CS:0}; return t.stats[id]; }
+function ensurePitch(key,id){ const t=team(key); if(!t.pitchStats[id]) t.pitchStats[id]={outs:0,H:0,R:0,ER:0,BB:0,K:0,pitches:0}; return t.pitchStats[id]; }
+function playerName(key,id){ const p=team(key).players.find(x=>x.id===id); if(!p) return '-'; return p.name.trim(); }
+function playerNum(key,id){ const p=team(key).players.find(x=>x.id===id); return p? (p.num||'-'):'-'; }
+// 1-based batting-order position, or null if not in the current lineup (bench / other team).
+function battingOrderNum(key,id){ const idx = team(key).lineup.indexOf(id); return idx>=0 ? idx+1 : null; }
+// "<order>. <name> #<jersey>" — the shared display format for a lineup player (at-bat batter, pitcher).
+function orderNameJersey(key,id){
+  const ord = battingOrderNum(key,id);
+  const nm = playerName(key,id);
+  const num = playerNum(key,id);
+  return `${ord?ord+'. ':''}${nm}${num&&num!=='-'?' #'+num:''}`;
+}
+
+function firstHalfKey(){ return state.firstBatting; }
+function battingKey(){
+  const fh = firstHalfKey();
+  const other = fh==='us'?'them':'us';
+  return state.half==='top'? fh : other;
+}
+function fieldingKey(){ return battingKey()==='us'?'them':'us'; }
+function awayKey(){ return state.firstBatting; }
+function homeKey(){ return state.firstBatting==='us'?'them':'us'; }
+
+function addRun(key,n){
+  const arr = state.innings[key];
+  const idx = state.inning-1;
+  arr[idx] = (arr[idx]||0)+n;
+}
+function totalRuns(key){ return (state.innings[key]||[]).reduce((a,b)=>a+(b||0),0); }
+function totalHits(key){ return Object.values(team(key).stats).reduce((a,s)=>a+s.H,0); }
+
+function logPlay(text){ state.log.unshift(`${state.half==='top'?'▲':'▼'}${state.inning} - ${text}`); }
+
+// ---------------- SCOREBOOK GRID ----------------
+const BATTER_OUT_KINDS = ['K','Ks','GO','FO','PU','SF','SAC','DP'];
+function boxKey(teamKey, playerId, inning){ return `${teamKey}_${playerId}_${inning}`; }
+function slotKey(teamKey, inning, battingIdx){ return `${teamKey}_${inning}_${battingIdx}`; }
+// Returns the lineup slot's loop count this inning (0 = first pass, 1 = column "1'", ...) and advances it.
+// Keyed by slot, so a sub inherits the count.
+function nextSlotSubIndex(teamKey, battingIdx){
+  const key = slotKey(teamKey, state.inning, battingIdx);
+  const cur = state.slotSubIndex[key] || 0;
+  state.slotSubIndex[key] = cur + 1;
+  return cur;
+}
+function currentSlotSubIndex(teamKey){
+  return state.slotSubIndex[slotKey(teamKey, state.inning, team(teamKey).battingIdx)] || 0;
+}
+function recordBox(teamKey, playerId, entry){
+  const key = boxKey(teamKey, playerId, state.inning);
+  if(!state.scorebook[key]) state.scorebook[key] = [];
+  state.scorebook[key].push(entry);
+}
+function getBoxes(teamKey, playerId, inning){ return state.scorebook[boxKey(teamKey,playerId,inning)] || []; }
+function updateRunnerBox(teamKey, playerId, updates){
+  const arr = state.scorebook[boxKey(teamKey, playerId, state.inning)];
+  if(!arr || !arr.length) return;
+  Object.assign(arr[arr.length-1], updates);
+}
+// Tags one runner leg (leg N = base N-1 -> N; 1 = home-to-1st, 4 = 3rd-to-home). Merges per leg, so an SB tag
+// on leg 2 survives a later advance to 3rd.
+function addLegTag(teamKey, playerId, legNum, label, dotted){
+  const arr = state.scorebook[boxKey(teamKey, playerId, state.inning)];
+  if(!arr || !arr.length) return;
+  const entry = arr[arr.length-1];
+  if(!entry.legTags) entry.legTags = {};
+  entry.legTags[legNum] = Object.assign({}, entry.legTags[legNum], { label, dotted: dotted!==false });
+}
+// Small circled tag per completed leg showing whose at-bat it happened in (leg 1: the runner's own).
+// Merges with addLegTag labels.
+function addLegBatterNum(teamKey, playerId, legNum, jerseyNum){
+  const arr = state.scorebook[boxKey(teamKey, playerId, state.inning)];
+  if(!arr || !arr.length) return;
+  const entry = arr[arr.length-1];
+  if(!entry.legTags) entry.legTags = {};
+  entry.legTags[legNum] = Object.assign({}, entry.legTags[legNum], { batterNum: jerseyNum });
+}
+function tagLegsWithBatter(teamKey, playerId, fromLeg, toLeg, jerseyNum){
+  for(let leg=fromLeg; leg<=toLeg; leg++) addLegBatterNum(teamKey, playerId, leg, jerseyNum);
+}
+
+// ---------------- HISTORY / UNDO ----------------
+// Snapshots are kept as JSON strings (no live object graphs held in memory; parsed only on undo).
+function snapshot(){
+  return JSON.stringify({
+    teams: state.teams, inning: state.inning, half: state.half, outs: state.outs,
+    bases: state.bases, innings: state.innings, log: state.log, gameOver: state.gameOver,
+    scorebook: state.scorebook, count: state.count, slotSubIndex: state.slotSubIndex
+  });
+}
+function pushHistory(){
+  state.history.push(snapshot());
+  if(state.history.length>25) state.history.shift();
+}
+function undo(){
+  if(!state.history.length) return;
+  const wasOnSetup = state.screen==='setup';
+  const snap = JSON.parse(state.history.pop());
+  Object.assign(state, snap);
+  state.sheet = null;
+  state.screen = wasOnSetup ? 'setup' : (state.gameOver ? 'box' : 'game');
+  render();
+}
+
+// ---------------- GAME FLOW ----------------
+// Every Batting Order row counts toward the lineup, blank or not (quick start: order alone identifies players).
+// A Bench row counts only once it has a name or number.
+let startGameTriggered = false;
+function handleStartGamePress(e){
+  if(e){ e.preventDefault(); e.stopPropagation(); }
+  const btn = document.getElementById('startGameBtn');
+  if(btn) btn.textContent = '⏳ Starting…';
+  if(startGameTriggered) return;
+  startGameTriggered = true;
+  startGame();
+}
+function startGame(){
+  state.setupError = null;
+  ['us','them'].forEach(key=>{
+    const t = team(key);
+    const lineupRows = t.players.filter(p=>(p.group||'lineup')!=='bench');
+    t.lineup = lineupRows.map(p=>p.id);
+    t.battingIdx = 0;
+    lineupRows.forEach(p=>ensureStats(key,p.id));
+    if(state.trackPitching && lineupRows.length) t.currentPitcherId = t.currentPitcherId || lineupRows[0].id;
+  });
+  if(team('us').lineup.length<1 || team('them').lineup.length<1){
+    state.setupError = 'Both teams need at least one row in Batting Order.';
+    startGameTriggered = false;
+    lastMainHTML = null; // start button text was set directly; force repaint
+    render();
+    return;
+  }
+  state.gameStarted = true;
+  state.gameOver = false;
+  state.screen = 'game';
+  render();
+  scrollAppToTop();
+}
+function scrollAppToTop(){
+  const doScroll = ()=>{
+    window.scrollTo(0,0);
+    const app = document.getElementById('app');
+    if(app) app.scrollTop = 0;
+  };
+  doScroll();
+  // Some mobile browsers snap scroll back after the click handler; re-assert on the next frames.
+  requestAnimationFrame(()=>{ doScroll(); requestAnimationFrame(doScroll); });
+}
+function currentBatterId(){ const t=team(battingKey()); return t.lineup[t.battingIdx]; }
+function nextBatter(key){ const t=team(key); t.battingIdx = (t.battingIdx+1) % t.lineup.length; state.count = {balls:0, strikes:0, fouls:0}; }
+function addBall(){ if(state.count.balls<5) state.count.balls++; render(); }
+function subBall(){ if(state.count.balls>0) state.count.balls--; render(); }
+function addStrike(){ if(state.count.strikes<5) state.count.strikes++; render(); }
+function subStrike(){ if(state.count.strikes>0) state.count.strikes--; render(); }
+function addFoul(){ state.count.fouls=(state.count.fouls||0)+1; render(); }
+function resetCount(){ state.count = {balls:0, strikes:0, fouls:0}; render(); }
+
+function recordOut(count){
+  state.outs += count;
+  if(state.outs >= 3) endHalfInning();
+}
+function endHalfInning(){
+  const justBatted = battingKey();
+  const idx = state.inning-1;
+  if(state.innings[justBatted][idx]===undefined) state.innings[justBatted][idx]=0;
+  // Mark runners still on base as LOB on their latest box this inning.
+  [1,2,3].forEach(b=>{
+    const rid = state.bases[b];
+    if(rid){
+      const boxes = getBoxes(justBatted, rid, state.inning);
+      if(boxes.length) boxes[boxes.length-1].lob = true;
+    }
+  });
+  state.outs = 0;
+  state.bases = {1:null,2:null,3:null};
+  if(state.half==='top'){ state.half='bottom'; } else { state.half='top'; state.inning += 1; }
+}
+function manualEndHalfInning(){ pushHistory(); endHalfInning(); render(); }
+function endGame(){ if(!confirm('End the game? This locks in the final score and stats.')) return; pushHistory(); state.gameOver=true; state.screen='box'; render(); }
+
+function forcedRunners(){
+  return {1:true, 2:!!state.bases[1], 3:!!state.bases[1] && !!state.bases[2]};
+}
+
+const OUTCOME_LABELS = {'1B':'Single','2B':'Double','3B':'Triple','HR':'Home Run','BB':'Walk','HBP':'Hit by Pitch','K':'Strikeout (looking)','Ks':'Strikeout (swinging)','GO':'Ground Out','FO':'Fly Out','PU':'Pop Out','SF':'Sac Fly','SAC':'Sac Bunt','FC':"Fielder's Choice",'E':'Error','DP':'Double Play'};
+const FIELDING_KINDS = ['GO','FO','PU','SF','SAC','E'];
+
+function applyOutcome(kind){
+  if(kind==='K'){
+    state.sheet = { outcome:'STRIKEOUT_TYPE' };
+    render();
+    return;
+  }
+  if(FIELDING_KINDS.includes(kind)){
+    openOutPlaySheet(kind);
+    return;
+  }
+  proceedOutcome(kind);
+}
+function openOutPlaySheet(kind){
+  const key = battingKey();
+  const batterDefaultOut = kind!=='E';
+  const runners = [3,2,1].filter(b=>state.bases[b]).map(b=>({
+    base:b, id: state.bases[b], name: playerName(key,state.bases[b]), num: playerNum(key,state.bases[b]),
+    choice: defaultChoiceFor(kind, b), outTarget: null, outFieldSeq: [], outPrefix: null
+  }));
+  state.sheet = {
+    outcome:'OUT_PLAY', kind,
+    batter: { out: batterDefaultOut, outAt: 1, seq: [] },
+    runners,
+    outOrder: batterDefaultOut ? ['batter'] : [],
+    activeSubject: null,
+    swapSelect: null
+  };
+  render();
+}
+// Swap which out happened when: tap one out-badge to select, tap another to swap (again to deselect).
+// Pairwise swaps cover DP/TP.
+function outPlayTapBadge(subj){
+  const s = state.sheet; if(!s || !s.outOrder.includes(subj)) return;
+  if(s.swapSelect===null){ s.swapSelect = subj; render(); return; }
+  if(s.swapSelect===subj){ s.swapSelect = null; render(); return; }
+  const i = s.outOrder.indexOf(s.swapSelect), j = s.outOrder.indexOf(subj);
+  [s.outOrder[i], s.outOrder[j]] = [s.outOrder[j], s.outOrder[i]];
+  s.swapSelect = null;
+  render();
+}
+function outPlaySetBatterOutAt(v){ if(state.sheet) state.sheet.batter.outAt = v; render(); }
+function outPlayTapBatterFielder(n){ if(!state.sheet) return; state.sheet.batter.seq.push(n); state.sheet.activeSubject='batter'; render(); }
+function outPlayUndoBatterFielder(){ if(state.sheet) state.sheet.batter.seq.pop(); render(); }
+function activeSeqFor(s){
+  if(!s || s.activeSubject==null) return [];
+  if(s.activeSubject==='batter') return s.batter.seq;
+  const r = s.runners.find(x=>x.base===s.activeSubject);
+  return r ? (r.outFieldSeq||[]) : [];
+}
+function deriveOutPlayKind(s){
+  if(s.kind==='E') return 'E';
+  const n = s.outOrder.length;
+  if(n>=2) return 'DP';
+  return s.kind;
+}
+function confirmOutPlay(){
+  const s = state.sheet;
+  if(!s.outOrder.length && s.kind!=='E') return;
+  if(baseCollisionMessages(s).length) return; // guard: UI already disables Confirm in this case
+  const finalKind = deriveOutPlayKind(s);
+  if(finalKind==='DP'){
+    // If only one DP out has fielders, mirror them onto the other out.
+    const seqFor = (subj)=> subj==='batter' ? s.batter.seq : ((s.runners.find(x=>x.base===subj)||{}).outFieldSeq || []);
+    const setSeqFor = (subj, seq)=>{
+      if(subj==='batter') s.batter.seq = seq.slice();
+      else { const r = s.runners.find(x=>x.base===subj); if(r) r.outFieldSeq = seq.slice(); }
+    };
+    const nonEmpty = s.outOrder.map(seqFor).filter(sq=>sq && sq.length);
+    if(nonEmpty.length===1){
+      const fillSeq = nonEmpty[0];
+      s.outOrder.forEach(subj=>{ if(!seqFor(subj).length) setSeqFor(subj, fillSeq); });
+    }
+  }
+  state.pendingBatterOut = s.batter.out;
+  state.pendingBatterOutAt = s.batter.outAt || 1;
+  state.pendingBatterSeq = s.batter.seq.slice();
+  state.pendingOutOrder = s.outOrder.slice();
+  state.pendingOriginalKind = s.kind;
+  const runners = s.runners;
+  state.sheet = null;
+  resolveOutcome(finalKind, runners);
+}
+function chooseStrikeoutType(t){
+  state.sheet = null;
+  proceedOutcome(t);
+}
+// originalKind: ball type (GO/FO/PU/SF/SAC/E), sets the letter prefix. finalKind: how the play was recorded (may become FC/DP).
+// prefixOverride: manual FC/DP tag on a runner's out, or 'FC' for the batter's leg-tag. includeDP: runner notation only
+// (the DP suffix goes on the runner, never the batter). applyBallPrefix: batter only (a runner is retired by a throw).
+const BALL_PREFIX = {SF:'SF', SAC:'SH', FO:'F', PU:'PU', GO:'GO'};
+function fieldingNotation(originalKind, finalKind, seq, prefixOverride, includeDP, applyBallPrefix){
+  const joined = (seq && seq.length) ? seq.join('-') : '';
+  const withPrefix = p => joined ? p+' '+joined : p;
+  let text = joined; // retired runner / untapped GO: plain fielder chain
+  if(prefixOverride==='FC') text = withPrefix('FC');
+  else if(applyBallPrefix){
+    const p = (finalKind==='E' || originalKind==='E') ? 'E' : BALL_PREFIX[originalKind];
+    if(p) text = withPrefix(p);
+  }
+  if(includeDP && (prefixOverride==='DP' || finalKind==='DP')) text = text ? (text+' DP') : 'DP';
+  return text;
+}
+
+function proceedOutcome(kind){
+  const runnersOnBase = [1,2,3].filter(b=>state.bases[b]);
+  const ambiguous = ['1B','2B','3B'].includes(kind);
+  if(runnersOnBase.length>0 && ambiguous){
+    openSheet(kind);
+  } else if(runnersOnBase.length>0 && (kind==='BB' || kind==='HBP')){
+    // forced advances are deterministic: resolve without a confirm sheet
+    const choices = [3,2,1].filter(b=>state.bases[b]).map(b=>({base:b, id:state.bases[b], choice: defaultChoiceFor(kind,b)}));
+    resolveOutcome(kind, choices);
+  } else {
+    resolveOutcome(kind, [1,2,3].filter(b=>state.bases[b]).map(b=>({base:b,id:state.bases[b],choice:'stay'})));
+  }
+}
+
+function defaultChoiceFor(kind, base){
+  const forced = forcedRunners();
+  switch(kind){
+    case '1B': case '2B': case '3B': return 'advance1';
+    case 'GO': return forced[base] ? 'advance1' : 'stay';
+    case 'BB': case 'HBP': return forced[base] ? 'advance1' : 'stay';
+    case 'FO': return base===3 ? 'score' : 'stay';
+    case 'SF': return base===3 ? 'score' : 'stay';
+    case 'SAC': return forced[base] ? 'advance1' : 'stay';
+    case 'FC': return forced[base] ? 'advance1' : 'stay';
+    case 'E': return forced[base] ? 'advance1' : 'stay';
+    case 'DP': return forced[base] ? 'out' : 'stay';
+    default: return 'stay';
+  }
+}
+
+function openSheet(kind){
+  const key = battingKey();
+  const runners = [3,2,1].filter(b=>state.bases[b]).map(b=>{
+    const choice = defaultChoiceFor(kind, b);
+    return { base:b, id: state.bases[b], name: playerName(key,state.bases[b]), num: playerNum(key,state.bases[b]),
+      choice, outTarget: choice==='out' ? b+1 : null, outFieldSeq: [], outPrefix: null };
+  });
+  state.sheet = { outcome: kind, runners, outOrder: [], swapSelect: null, activeSubject: null };
+  render();
+}
+function outTargetOptions(base){
+  const names = {2:'2nd',3:'3rd',4:'Home'};
+  const opts = [];
+  for(let b=base+1;b<=4;b++) opts.push({v:b, label:names[b]});
+  return opts;
+}
+function sheetChoose(base, choice, outTarget){
+  if(!state.sheet) return;
+  const r = state.sheet.runners.find(x=>x.base===base);
+  if(r){
+    const wasOut = r.choice==='out';
+    r.choice = choice;
+    r.outTarget = choice==='out' ? (outTarget||(base+1)) : null;
+    if(choice==='out' && !r.outFieldSeq) r.outFieldSeq = [];
+    if(state.sheet.outOrder){
+      const nowOut = choice==='out';
+      if(nowOut && !wasOut){ if(!state.sheet.outOrder.includes(base)) state.sheet.outOrder.push(base); }
+      else if(!nowOut && wasOut){ state.sheet.outOrder = state.sheet.outOrder.filter(k=>k!==base); }
+      state.sheet.swapSelect = null;
+    }
+  }
+  render();
+}
+function sheetOutFieldTap(base, n){
+  if(!state.sheet) return;
+  const r = state.sheet.runners.find(x=>x.base===base);
+  if(r){ if(!r.outFieldSeq) r.outFieldSeq=[]; r.outFieldSeq.push(n); if('activeSubject' in state.sheet) state.sheet.activeSubject = base; render(); }
+}
+function sheetToggleRunnerPrefix(base, tag){
+  if(!state.sheet) return;
+  const r = state.sheet.runners.find(x=>x.base===base);
+  if(r){ r.outPrefix = (r.outPrefix===tag) ? null : tag; render(); }
+}
+function sheetOutFieldUndo(base){
+  if(!state.sheet) return;
+  const r = state.sheet.runners.find(x=>x.base===base);
+  if(r && r.outFieldSeq) r.outFieldSeq.pop();
+  render();
+}
+function confirmSheet(){
+  if(!state.sheet) return;
+  if(baseCollisionMessages(state.sheet).length) return; // guard: UI already disables Confirm in this case
+  const outcome = state.sheet.outcome;
+  const runners = state.sheet.runners;
+  state.pendingOutOrder = (state.sheet.outOrder && state.sheet.outOrder.length) ? state.sheet.outOrder.slice() : null;
+  state.sheet = null;
+  // A hit that also retires a runner is an FC (no hit credit), at the base the batter reached.
+  const hasRunnerOut = (runners||[]).some(r=>r.choice==='out');
+  const hitBaseMap = {'1B':1,'2B':2,'3B':3};
+  if(hitBaseMap[outcome] && hasRunnerOut){
+    state.pendingFCBase = hitBaseMap[outcome];
+    resolveOutcome('FC', runners);
+  } else {
+    resolveOutcome(outcome, runners);
+  }
+}
+
+function batterDestBase(kind){
+  switch(kind){
+    case '1B': case 'BB': case 'HBP': case 'E': return 1;
+    case 'FC': return state.pendingFCBase || 1;
+    case '2B': return 2;
+    case '3B': return 3;
+    case 'HR': return 'home';
+    default: return null;
+  }
+}
+
+function resolveOutcome(kind, runnerChoices){
+  pushHistory();
+  const teamKey = battingKey();
+  const fKey = teamKey==='us'?'them':'us';
+  const batterId = currentBatterId();
+  const bstats = ensureStats(teamKey, batterId);
+  runnerChoices = runnerChoices || [];
+  let runsThisPlay = 0;
+  let outsThisPlay = 0;
+  const newBases = {1:null,2:null,3:null};
+
+  const batterOutProvided = state.pendingBatterOut;
+  const batterIsOut = (batterOutProvided!==null && batterOutProvided!==undefined) ? batterOutProvided : BATTER_OUT_KINDS.includes(kind);
+  const batterSeq = state.pendingBatterSeq || [];
+  const batterOutAt = state.pendingBatterOutAt || 1;
+  const originalKind = state.pendingOriginalKind || kind;
+  state.pendingBatterOut = null;
+  state.pendingBatterSeq = null;
+  state.pendingBatterOutAt = null;
+  state.pendingOriginalKind = null;
+
+  // The batter's box shows batterOutPlayCode. FC goes on a leg-tag instead (box shows "FC"); DP is never on the batter's
+  // side (it goes on the runner who was the other out).
+  let batterOutPlayCode = null;
+  let batterLegTagText = null;
+  if(batterIsOut){
+    batterOutPlayCode = fieldingNotation(originalKind, kind, batterSeq, null, false, true);
+  } else if(kind==='E'){
+    batterOutPlayCode = fieldingNotation(originalKind, kind, batterSeq, null, false, true);
+  } else if(kind==='FC'){
+    // Safe on FC: the batter has no fielder taps, so the leg-tag chain is the sequence that retired the runner.
+    const outRunner = (runnerChoices||[]).find(rr=>rr.choice==='out');
+    const fcSeq = (outRunner && outRunner.outFieldSeq && outRunner.outFieldSeq.length) ? outRunner.outFieldSeq : batterSeq;
+    batterLegTagText = fieldingNotation(originalKind, kind, fcSeq, 'FC', false, true);
+  }
+
+  // Runner outcomes are appended to the batter's log line so each belongs to its at-bat.
+  const runnerLogNotes = [];
+  if(kind==='HR'){
+    // every runner scores
+    const hrBatterNum = battingOrderNum(teamKey, batterId);
+    [1,2,3].forEach(b=>{
+      const rid = state.bases[b];
+      if(rid){ ensureStats(teamKey,rid).R += 1; runsThisPlay++; updateRunnerBox(teamKey, rid, {reached:4}); tagLegsWithBatter(teamKey, rid, b+1, 4, hrBatterNum); }
+    });
+  } else {
+    const atBatBatterNum = battingOrderNum(teamKey, batterId);
+    runnerChoices.slice().sort((a,b)=>b.base-a.base).forEach(r=>{
+      if(r.choice==='stay') newBases[r.base] = r.id;
+      else if(r.choice==='advance1' || r.choice==='advance2' || r.choice==='score'){
+        // dest = base reached (4 = scored). Legs r.base+1..dest get the batter tag (plus an FC tag on a fielder's choice).
+        const dest = r.choice==='score' ? 4 : Math.min(r.base + (r.choice==='advance1'?1:2), 4);
+        if(dest<=3) newBases[dest] = r.id;
+        else { ensureStats(teamKey, r.id).R += 1; runsThisPlay++; }
+        updateRunnerBox(teamKey, r.id, {reached:dest});
+        if(kind==='FC') for(let leg=r.base+1; leg<=dest; leg++) addLegTag(teamKey,r.id,leg,'FC',false);
+        tagLegsWithBatter(teamKey,r.id,r.base+1,dest,atBatBatterNum);
+      }
+      else if(r.choice==='out'){
+        outsThisPlay++;
+        const target = r.outTarget || (r.base+1);
+        const reachedVal = Math.max(0, Math.min(target-1, 3));
+        const targetLabel = {2:'2nd',3:'3rd',4:'home'}[target];
+        const basePlay = fieldingNotation(originalKind, kind, r.outFieldSeq, r.outPrefix, r.outPrefix==='DP');
+        // dp badge: whole play was a DP, or the scorer tagged this runner DP on the hit sheet (play kind stays 'FC').
+        updateRunnerBox(teamKey, r.id, {isOut:true, outPlay: basePlay, reached: reachedVal, outAttemptTo: target, dp: kind==='DP' || r.outPrefix==='DP', outBatterNum: atBatBatterNum});
+        // Out going past the next base: tag every leg reached before the out with the batter number, not just the out leg.
+        tagLegsWithBatter(teamKey, r.id, r.base+1, reachedVal, atBatBatterNum);
+        runnerLogNotes.push(`#${playerNum(teamKey,r.id)} ${playerName(teamKey,r.id)} out at ${targetLabel}`);
+      }
+    });
+  }
+
+  let dest;
+  if(['1B','2B','3B','HR','BB','HBP','FC'].includes(kind)){
+    dest = (kind==='FC' && batterIsOut) ? null : batterDestBase(kind);
+  } else {
+    // GO/FO/SF/SAC/E/DP: a safe batter always ends at 1st
+    dest = batterIsOut ? null : 1;
+  }
+  state.pendingFCBase = null;
+  bstats.AB += (['BB','HBP'].includes(kind) ? 0 : 1);
+  if(kind==='BB') bstats.BB+=1;
+  if(kind==='HBP') bstats.HBP+=1;
+  if(dest==='home'){ bstats.HR+=1; bstats.H+=1; bstats.R+=1; runsThisPlay++; }
+  else if(dest===1){ if(kind==='1B') bstats.H+=1; newBases[1]=batterId; }
+  else if(dest===2){ if(kind==='2B'){ bstats.H+=1; bstats.d2+=1; } newBases[2]=batterId; }
+  else if(dest===3){ if(kind==='3B'){ bstats.H+=1; bstats.d3+=1; } newBases[3]=batterId; }
+
+  if(batterIsOut) outsThisPlay += 1;
+  if(kind==='K'||kind==='Ks') bstats.SO+=1;
+
+  bstats.RBI += runsThisPlay;
+  if(runsThisPlay>0) addRun(teamKey, runsThisPlay);
+  state.bases = newBases;
+
+  if(state.trackPitching){
+    const fTeam = team(fKey);
+    if(fTeam.currentPitcherId){
+      const ps = ensurePitch(fKey, fTeam.currentPitcherId);
+      ps.outs += outsThisPlay;
+      // +1 = the deciding pitch (not tapped separately)
+      ps.pitches = (ps.pitches||0) + (state.count.balls + state.count.strikes + (state.count.fouls||0)) + 1;
+      if(kind==='K'||kind==='Ks') ps.K+=1;
+      if(kind==='BB') ps.BB+=1;
+      if(['1B','2B','3B','HR'].includes(kind)) ps.H+=1;
+      ps.R += runsThisPlay;
+      ps.ER += runsThisPlay;
+    }
+  }
+
+  const label = OUTCOME_LABELS[kind] || kind;
+  let mainLogLine = `#${playerNum(teamKey,batterId)} ${playerName(teamKey,batterId)} - ${label}${batterOutPlayCode?` (${batterOutPlayCode})`:''}${runsThisPlay?` (${runsThisPlay} run${runsThisPlay>1?'s':''})`:''}`;
+  if(runnerLogNotes.length) mainLogLine += `; ${runnerLogNotes.join('; ')}`;
+  logPlay(mainLogLine);
+
+  recordBox(teamKey, batterId, {
+    balls: state.count.balls, strikes: state.count.strikes,
+    code: originalKind, outPlay: batterOutPlayCode,
+    reached: batterIsOut ? Math.max(0, batterOutAt-1) : (dest==='home'?4:(dest||0)),
+    outAttemptTo: batterIsOut ? batterOutAt : null,
+    isOut: batterIsOut, outNumber: null,
+    dp: batterIsOut && kind==='DP',
+    subIndex: nextSlotSubIndex(teamKey, team(teamKey).battingIdx)
+  });
+  const batterReachedLeg = dest==='home' ? 4 : (typeof dest==='number' ? dest : null);
+  if(batterLegTagText && batterReachedLeg) addLegTag(teamKey, batterId, batterReachedLeg, batterLegTagText, false);
+
+  // Out numbers follow the order outs were marked (fallback: runners high base first, then the batter).
+  const outOrder = (state.pendingOutOrder && state.pendingOutOrder.length) ? state.pendingOutOrder.slice() :
+    [...runnerChoices.filter(r=>r.choice==='out').sort((a,b)=>b.base-a.base).map(r=>r.base), ...(batterIsOut?['batter']:[])];
+  state.pendingOutOrder = null;
+  let outCounter = state.outs;
+  outOrder.forEach(subj=>{
+    outCounter++;
+    if(subj==='batter'){
+      const boxes = getBoxes(teamKey, batterId, state.inning);
+      const entry = boxes[boxes.length-1];
+      if(entry) entry.outNumber = outCounter;
+    } else {
+      const match = runnerChoices.find(r=>r.base===subj && r.choice==='out');
+      if(match) updateRunnerBox(teamKey, match.id, {outNumber: outCounter});
+    }
+  });
+
+  if(outsThisPlay>0) recordOut(outsThisPlay);
+  nextBatter(teamKey);
+  render();
+}
+
+// Steals and WP/PB advances skip the collision-checked sheet, so block the move if the next base is occupied
+// (home never collides).
+function stealAdvanceBlocked(base){
+  const nb = base+1;
+  return nb<=3 && !!state.bases[nb];
+}
+function openRunnerSheet(base){
+  const key = battingKey();
+  const id = state.bases[base];
+  if(!id) return;
+  state.sheet = { outcome:'RUNNER_EVENT', baseTapped: base, mode:'main', outReason:null, fieldSeq:[], wpType:null, pendingAction:null,
+    runners:[{base, id, name: playerName(key,id), num: playerNum(key,id)}] };
+  render();
+}
+function chooseWpPb(action){
+  // action: 'advance' or 'out' (thrown out on WP/PB)
+  if(!state.sheet) return;
+  if(action==='advance' && stealAdvanceBlocked(state.sheet.baseTapped)) return; // guard: UI already disables this button in this case
+  state.sheet.mode = 'choose_wp_pb';
+  state.sheet.pendingAction = action;
+  render();
+}
+function selectWpPbType(type){
+  // type: 'WP' or 'PB'
+  const s = state.sheet;
+  if(!s) return;
+  if(s.pendingAction==='advance'){
+    runnerAdvance('wp', type);
+  } else {
+    s.mode = 'out_entry';
+    s.outReason = 'OOB';
+    s.wpType = type;
+    s.fieldSeq = [];
+    render();
+  }
+}
+function runnerAdvance(kind, wpType){
+  // kind: 'steal' or 'wp' (WP/PB advance; wpType = 'WP' | 'PB')
+  if(!state.sheet) return;
+  const base = state.sheet.baseTapped;
+  if(stealAdvanceBlocked(base)) return; // guard: UI already disables this button in this case
+  const key = battingKey();
+  const id = state.bases[base];
+  state.sheet = null;
+  pushHistory();
+  const st = ensureStats(key, id);
+  const nb = base+1;
+  const tag = kind==='steal' ? 'SB' : wpType;
+  const verb = kind==='steal' ? null : (wpType==='WP' ? 'a wild pitch' : 'a passed ball');
+  if(kind==='steal') st.SB+=1;
+  if(nb<=3){
+    state.bases[base]=null; state.bases[nb]=id;
+    updateRunnerBox(key,id,{reached:nb});
+    addLegTag(key,id,nb,tag,true);
+    logPlay(`#${playerNum(key,id)} ${playerName(key,id)} ${kind==='steal'?('steals '+(nb===2?'2nd':'3rd')):('advances on '+verb)}`);
+  } else {
+    state.bases[base]=null; st.R+=1; addRun(key,1);
+    updateRunnerBox(key,id,{reached:4});
+    addLegTag(key,id,4,tag,true);
+    logPlay(`#${playerNum(key,id)} ${playerName(key,id)} ${kind==='steal'?'steals home!':('scores on '+verb)}`);
+  }
+  render();
+}
+function startRunnerOutEntry(reason){
+  // reason: 'CS' caught stealing, 'PO' picked off
+  if(!state.sheet) return;
+  state.sheet.mode = 'out_entry';
+  state.sheet.outReason = reason;
+  state.sheet.fieldSeq = [];
+  render();
+}
+function backToRunnerMain(){ if(state.sheet){ state.sheet.mode='main'; render(); } }
+function tapRunnerOutFielder(n){ if(state.sheet){ state.sheet.fieldSeq.push(n); render(); } }
+function undoRunnerOutFielder(){ if(state.sheet){ state.sheet.fieldSeq.pop(); render(); } }
+function confirmRunnerOut(){
+  if(!state.sheet) return;
+  const { baseTapped, outReason, fieldSeq, wpType } = state.sheet;
+  const key = battingKey();
+  const id = state.bases[baseTapped];
+  state.sheet = null;
+  pushHistory();
+  const st = ensureStats(key, id);
+  if(outReason==='CS') st.CS += 1;
+  state.bases[baseTapped] = null;
+  const seqText = fieldSeq.join('-');
+  const tag = outReason==='CS' ? 'CS' : (outReason==='PO' ? 'PO' : wpType);
+  const prefix = {CS:'CS', PO:'PO'}[outReason] || '';
+  const playCode = prefix ? (seqText? `${prefix} ${seqText}` : prefix) : (seqText || tag || 'OUT');
+  const label = outReason==='CS' ? 'caught stealing' : (outReason==='PO' ? 'picked off' : `thrown out advancing (${wpType==='WP'?'wild pitch':'passed ball'})`);
+  logPlay(`#${playerNum(key,id)} ${playerName(key,id)} ${label}${seqText? ` (${seqText})`:''}`);
+  const outNumber = state.outs + 1;
+  const attemptTo = baseTapped+1;
+  updateRunnerBox(key, id, { isOut:true, outNumber, outPlay: playCode, outAttemptTo: attemptTo, outAdvTag: tag });
+  recordOut(1);
+  render();
+}
+
+function openChangeBatterSheet(){ state.sheet = { outcome:'CHANGE_BATTER', teamKey: battingKey() }; render(); }
+function setBatter(id){
+  if(!state.sheet) return;
+  const key = state.sheet.teamKey;
+  pushHistory();
+  const idx = team(key).lineup.indexOf(id);
+  if(idx>=0) team(key).battingIdx = idx;
+  state.count = {balls:0, strikes:0, fouls:0};
+  state.sheet = null;
+  render();
+}
+
+function switchPitcher(key, id){ team(key).currentPitcherId = id; ensurePitch(key,id); render(); }
+function openPitcherSheet(){ if(!state.trackPitching) return; state.sheet = { outcome:'SWITCH_PITCHER', teamKey: fieldingKey() }; render(); }
+function confirmSwitchPitcher(id){
+  const s = state.sheet; if(!s) return;
+  switchPitcher(s.teamKey, id);
+  state.sheet = null;
+  render();
+}
+// Includes subbed-out players: their stats/boxes are kept (only the lineup slot is overwritten), so lists union lineup with team.stats.
+function battingRosterIds(key){
+  const tm = team(key);
+  if(!tm.lineup.length) return tm.players.filter(p=>p.num.trim()).map(p=>p.id);
+  const seen = new Set(tm.lineup);
+  const subbedOut = Object.keys(tm.stats).filter(id=>!seen.has(id));
+  return [...tm.lineup, ...subbedOut];
+}
+function avg(st){ if(!st.AB) return '.000'; return (st.H/st.AB).toFixed(3).replace(/^0/,''); }
+function obp(st){ const denom = st.AB+st.BB+st.HBP; if(!denom) return '.000'; return ((st.H+st.BB+st.HBP)/denom).toFixed(3).replace(/^0/,''); }
+function slg(st){ if(!st.AB) return '.000'; const tb = st.H + st.d2 + 2*st.d3 + 3*st.HR; return (tb/st.AB).toFixed(3).replace(/^0/,''); }
+function ops(st){
+  const denom = st.AB+st.BB+st.HBP;
+  const o = denom? (st.H+st.BB+st.HBP)/denom : 0;
+  const s = st.AB? (st.H + st.d2 + 2*st.d3 + 3*st.HR)/st.AB : 0;
+  return (o+s).toFixed(3).replace(/^0/,'');
+}
+
+// ---------------- AUTOSAVE (localStorage, silent, survives refresh) ----------------
+const AUTOSAVE_KEY = 'scorekeeper_autosave_v1';
+// Shared by the save file and autosave so their fields and defaults stay in sync.
+function buildGameData(includeScreen){
+  const data = {
+    v:2, firstBatting: state.firstBatting, trackPitching: state.trackPitching,
+    gameStarted: state.gameStarted, gameOver: state.gameOver,
+    teams: state.teams, inning: state.inning, half: state.half, outs: state.outs,
+    bases: state.bases, innings: state.innings, log: state.log, scorebook: state.scorebook, count: state.count,
+    slotSubIndex: state.slotSubIndex
+  };
+  if(includeScreen) data.screen = state.screen;
+  return data;
+}
+// Applies a save file / autosave onto state (shared so defaults stay in sync; count always has `fouls`).
+function applyGameData(data){
+  state.firstBatting = data.firstBatting || 'us';
+  state.trackPitching = !!data.trackPitching;
+  state.gameStarted = data.gameStarted; state.gameOver = !!data.gameOver;
+  state.teams = data.teams; state.inning = data.inning; state.half = data.half; state.outs = data.outs;
+  state.bases = data.bases; state.innings = data.innings; state.log = data.log || [];
+  state.scorebook = data.scorebook || {}; state.count = data.count || {balls:0,strikes:0,fouls:0};
+  state.slotSubIndex = data.slotSubIndex || {};
+  state.sheet = null; state.history = [];
+  state.screen = state.gameOver ? 'box' : (state.gameStarted ? 'game' : 'setup');
+}
+function autosaveSnapshot(){
+  return buildGameData(true);
+}
+// Runs at the end of every render(). Debounced: a burst of taps becomes one write ~500ms later (full-state stringify
+// slows as the scorebook grows). Saves in any phase; cleared only when the resume prompt is declined.
+let autosaveTimer = null;
+let lastAutosaveJSON = null;
+function autosaveNow(){
+  clearTimeout(autosaveTimer); autosaveTimer = null;
+  try{
+    const json = JSON.stringify(autosaveSnapshot());
+    if(json === lastAutosaveJSON) return; // nothing changed since last write
+    localStorage.setItem(AUTOSAVE_KEY, json);
+    lastAutosaveJSON = json;
+  } catch(e){ /* storage unavailable/full: skip silently */ }
+}
+function autosaveState(){ clearTimeout(autosaveTimer); autosaveTimer = setTimeout(autosaveNow, 500); }
+// Flush a pending write when the page is hidden/closing (more reliable than beforeunload on mobile).
+function flushAutosave(){ if(autosaveTimer) autosaveNow(); }
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushAutosave(); });
+window.addEventListener('pagehide', flushAutosave);
+// Runs once before the first render(): offers to resume a prior game; declining discards it.
+function restoreAutosaveIfAny(){
+  let raw;
+  try{ raw = localStorage.getItem(AUTOSAVE_KEY); } catch(e){ return; }
+  if(!raw) return;
+  let data;
+  try{ data = JSON.parse(raw); } catch(e){ localStorage.removeItem(AUTOSAVE_KEY); return; }
+  if(!data) return;
+  const awayName = (data.teams && data.teams.us && data.teams.us.name) || 'Team A';
+  const homeName = (data.teams && data.teams.them && data.teams.them.name) || 'Team B';
+  let promptText;
+  if(!data.gameStarted){
+    // Setup-only autosave: offer only if a team name or jersey number was entered.
+    const hasRosterInput = (t)=> t && (t.name!=='Team A' && t.name!=='Team B' || (t.players||[]).some(p=>p.num && p.num.trim()!==''));
+    const anyInput = (data.teams && (hasRosterInput(data.teams.us) || hasRosterInput(data.teams.them)));
+    if(!anyInput){ localStorage.removeItem(AUTOSAVE_KEY); return; }
+    promptText = `Restore your roster/settings from before (${awayName} / ${homeName})? Choosing Cancel discards it and starts blank.`;
+  } else if(data.gameOver){
+    promptText = `Restore your last finished game (${awayName} vs ${homeName})? You'll land on Box Score to review or export it. Choosing Cancel discards it and starts fresh.`;
+  } else {
+    promptText = `Resume the game in progress (${awayName} vs ${homeName})? Choosing Cancel discards it and starts fresh.`;
+  }
+  if(!confirm(promptText)){
+    localStorage.removeItem(AUTOSAVE_KEY);
+    return;
+  }
+  applyGameData(data);
+}
+// Warn on refresh in any phase: during roster entry, and after the game ends until reviewed/exported.
+window.addEventListener('beforeunload', (e)=>{
+  e.preventDefault(); e.returnValue='';
+});
+
+// ---------------- SAVE / LOAD GAME ----------------
+function saveGame(){
+  const data = buildGameData(false);
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
+  a.href = url; a.download = `${team('us').name}_vs_${team('them').name}_${stamp}.json`.replace(/\s+/g,'_');
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function triggerLoad(){ document.getElementById('loadFileInput').click(); }
+function handleLoadFile(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const data = JSON.parse(e.target.result);
+      applyGameData(data);
+      render();
+    } catch(err){
+      alert('Could not read that file — make sure it\'s a game file exported from this app.');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+// ---------------- CSV EXPORT ----------------
+function csvEscape(v){ return `"${String(v).replace(/"/g,'""')}"`; }
+function exportCSV(){
+  let rows = [];
+  const maxInn = Math.max(state.inning, state.innings.us.length, state.innings.them.length, 1);
+  const linescoreHeader = ['Team']; for(let i=1;i<=maxInn;i++) linescoreHeader.push('Inn'+i); linescoreHeader.push('R','H');
+  rows.push(linescoreHeader);
+  [awayKey(), homeKey()].forEach(key=>{
+    const t = team(key);
+    const r = [t.name];
+    for(let i=1;i<=maxInn;i++) r.push(state.innings[key][i-1] ?? '');
+    r.push(totalRuns(key), totalHits(key));
+    rows.push(r);
+  });
+  rows.push([]);
+
+  ['us','them'].forEach(key=>{
+    const t = team(key);
+    rows.push([`${t.name} - Batting`]);
+    rows.push(['#','Player','AB','R','H','2B','3B','HR','RBI','BB','HBP','SO','SB','CS','AVG','OBP','SLG','OPS']);
+    (t.lineup.length?battingRosterIds(key):t.players.map(p=>p.id)).forEach(id=>{
+      const s = ensureStats(key,id);
+      rows.push([playerNum(key,id), playerName(key,id), s.AB,s.R,s.H,s.d2,s.d3,s.HR,s.RBI,s.BB,s.HBP,s.SO,s.SB,s.CS, avg(s), obp(s), slg(s), ops(s)]);
+    });
+    rows.push([]);
+    if(state.trackPitching){
+      rows.push([`${t.name} - Pitching`]);
+      rows.push(['#','Pitcher','IP','Pitches','H','R','ER','BB','K']);
+      Object.keys(t.pitchStats).forEach(id=>{
+        const ps = t.pitchStats[id];
+        rows.push([playerNum(key,id), playerName(key,id), `${Math.floor(ps.outs/3)}.${ps.outs%3}`, ps.pitches||0, ps.H, ps.R, ps.ER, ps.BB, ps.K]);
+      });
+      rows.push([]);
+    }
+  });
+
+  rows.push(['#','Play']);
+  state.log.slice().reverse().forEach((line,i)=>{ rows.push([i+1, line]); });
+  const csv = '\uFEFF' + rows.map(r=>r.map(csvEscape).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${team('us').name}_vs_${team('them').name}_stats.csv`.replace(/\s+/g,'_');
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ---------------- RENDER ----------------
+// Main screen and sheet render into separate roots; each is only re-parsed when its HTML actually changed.
+// (Sheet taps no longer rebuild the whole screen; unchanged regions keep their DOM, focus and scroll.)
+let lastMainHTML = null, lastSheetHTML = '';
+function render(){
+  document.documentElement.classList.toggle('scroll-locked', !state.gameStarted);
+  const app = document.getElementById('app'), sheetRoot = document.getElementById('sheetRoot');
+  let mainHTML, sheetHTML;
+  try{
+    mainHTML = `
+      ${state.gameStarted ? renderScoreboard() : ''}
+      <div class="screen ${state.gameStarted?'with-tabbar':'setup-pad'}">
+        ${state.screen==='setup' ? renderSetup() : ''}
+        ${state.screen==='game' ? renderGame() : ''}
+        ${state.screen==='box' ? renderBox() : ''}
+        ${state.screen==='scorebook' ? renderScorebookGrid() : ''}
+      </div>
+      ${state.gameStarted && state.screen==='game' && !state.gameOver ? renderQuickbar() : ''}
+      ${state.gameStarted ? renderTabs() : ''}
+    `;
+    sheetHTML = state.sheet ? renderSheet() : '';
+  } catch(err){
+    // An error here used to leave the old DOM in place, so buttons looked dead. Show it instead.
+    console.error('render() failed:', err);
+    lastMainHTML = null; lastSheetHTML = '';
+    sheetRoot.innerHTML = '';
+    app.innerHTML = `<div style="padding:20px;font-family:monospace;font-size:12px;color:#C9703F;white-space:pre-wrap;">Render error — please screenshot this and report it:\n\n${(err && err.stack) || err}</div>`;
+    return;
+  }
+  const mainChanged = mainHTML !== lastMainHTML, sheetChanged = sheetHTML !== lastSheetHTML;
+  if(mainChanged){ app.innerHTML = mainHTML; lastMainHTML = mainHTML; }
+  if(sheetChanged){
+    const prev = sheetRoot.querySelector('.sheet');
+    const savedScrollTop = prev ? prev.scrollTop : null;
+    sheetRoot.innerHTML = sheetHTML; lastSheetHTML = sheetHTML;
+    if(savedScrollTop!==null){ const ns = sheetRoot.querySelector('.sheet'); if(ns) ns.scrollTop = savedScrollTop; }
+  }
+  if(state.sheet && state.sheet.outcome==='SCAN_CROP'){
+    // Canvas is image-driven (rotate/reset don't change the sheet HTML): new canvas = init + listeners, else just redraw.
+    if(sheetChanged) initScanCropCanvas(); else drawScanCropCanvas();
+  }
+  if(state.screen==='setup' && mainChanged) attachPreGameDragHandlers();
+  // Skip autosave on sheet-only renders (sheet UI state isn't part of the save; data edits that matter change the main HTML).
+  if(mainChanged || !state.sheet) autosaveState();
+}
+
+function renderScoreboard(){
+  const maxInn = Math.max(state.inning, 7);
+  const cell = (key,i)=>{ const v = state.innings[key][i-1]; return v===undefined ? '' : v; };
+  const aKey = awayKey(), hKey = homeKey();
+  const cols = Array.from({length:maxInn}, (_,i)=>i+1);
+  // Only the batting team's cell for the current inning gets the amber box.
+  const cellClass = (key,i)=>{
+    if(i!==state.inning || battingKey()!==key) return '';
+    return 'active-col';
+  };
+  // Outs dots sit in the header's first column so every screen shows them without extra row height.
+  const outsHeaderDots = `<div class="outs-wrap">${[0,1,2].map(i=>`<div class="out-dot ${i<state.outs?'on':''}"></div>`).join('')}</div>`;
+  return `
+  <div class="scoreboard">
+    <table class="linescore">
+      <thead><tr><th>${outsHeaderDots}</th>${cols.map(c=>`<th>${c}</th>`).join('')}<th class="tot">R</th><th class="tot">H</th></tr></thead>
+      <tbody>
+        <tr><td class="team-name">${team(aKey).name}</td>${cols.map(c=>`<td class="${cellClass(aKey,c)}">${cell(aKey,c)}</td>`).join('')}<td class="tot">${totalRuns(aKey)}</td><td class="tot">${totalHits(aKey)}</td></tr>
+        <tr><td class="team-name">${team(hKey).name}</td>${cols.map(c=>`<td class="${cellClass(hKey,c)}">${cell(hKey,c)}</td>`).join('')}<td class="tot">${totalRuns(hKey)}</td><td class="tot">${totalHits(hKey)}</td></tr>
+      </tbody>
+    </table>
+  </div>`;
+}
+function suffix(n){ return n===1?'st':n===2?'nd':n===3?'rd':'th'; }
+function ordinal(n){ return `${n}${suffix(n)}`; }
+// Box Score uses "in"/"out" wording, Scorebook the bare ordinals. Both read tm.subHistory (set by confirmSub).
+function subNoteText(key, id, words){
+  const h = team(key).subHistory && team(key).subHistory[id];
+  if(!h) return '';
+  const parts = [];
+  if(h.inInning) parts.push((words?'in ':'')+ordinal(h.inInning));
+  if(h.outInning) parts.push((words?'out ':'')+ordinal(h.outInning));
+  return parts.length ? ` / ${parts.join(', ')}` : '';
+}
+
+function renderGameOverBanner(showGameOverTitle){
+  return `
+  <div class="gameover-banner">
+    <div class="go-title">${showGameOverTitle? 'Game Over' : 'Final'}</div>
+    <div class="go-score-row">
+      <div class="go-team">${team('us').name}</div>
+      <div class="go-score">${totalRuns('us')} - ${totalRuns('them')}</div>
+      <div class="go-team">${team('them').name}</div>
+    </div>
+  </div>`;
+}
+
+function renderQuickbar(){
+  return `
+  <div class="quickbar">
+    <button onclick="undo()" ${state.history.length?'':'disabled'}>${t('btn_undo')}</button>
+    <button onclick="openChangeBatterSheet()">${t('btn_batter')}</button>
+    <button class="save" onclick="saveGame()">${t('btn_save')}</button>
+    <button class="danger" onclick="manualEndHalfInning()">${t('btn_end_half')}</button>
+    <button class="danger" onclick="endGame()">${t('btn_end_game')}</button>
+  </div>`;
+}
+
+function renderTabs(){
+  return `
+  <div class="tabbar">
+    <div class="tab ${state.screen==='setup'?'active':''}" onclick="setScreen('setup')">${t('tab_roster')}</div>
+    <div class="tab ${state.screen==='game'?'active':''}" onclick="setScreen('game')">${t('tab_live')}</div>
+    <div class="tab ${state.screen==='scorebook'?'active':''}" onclick="setScreen('scorebook')">${t('tab_scorebook')}</div>
+    <div class="tab ${state.screen==='box'?'active':''}" onclick="setScreen('box')">${t('tab_box')}</div>
+  </div>`;
+}
+function setScreen(s){ state.screen = s; render(); }
+
+function renderSetup(){
+  const tm = team(state.setupTeam);
+  return `
+    <div class="card" style="padding:9px 12px;">
+      <div style="text-align:center;font-size:10px;color:#A39C88;margin-bottom:6px;">Version ${APP_VERSION}</div>
+      <div class="row">
+        <button class="btn ${state.lang==='en'?'':'ghost'} small" onclick="setLang('en')">English</button>
+        <button class="btn ${state.lang==='ja'?'':'ghost'} small" onclick="setLang('ja')">日本語</button>
+      </div>
+    </div>
+
+    <h2 class="section-title">${t('hdr_save_load')}</h2>
+    <div class="card">
+      <div class="row">
+        <button class="btn ghost icon-btn" ${!state.gameStarted?'disabled':''} onclick="saveGame()">${SAVE_ICON}<span>${t('btn_save_game')}</span></button>
+        <button class="btn ghost icon-btn" onclick="triggerLoad()">${LOAD_ICON}<span>${t('btn_load_game')}</span></button>
+      </div>
+      <input type="file" id="loadFileInput" accept="application/json" style="display:none" onchange="handleLoadFile(this)">
+      <div style="font-size:11px;color:#8a8373;margin-top:6px;">${t('save_load_hint')}</div>
+    </div>
+
+    <h2 class="section-title">${t('hdr_settings')}</h2>
+    <div class="card">
+      <label>${t('lbl_first_bat')}</label>
+      <div class="row">
+        <button class="btn compact ${state.firstBatting==='us'?'':'ghost'}" ${state.gameStarted?'disabled':''} onclick="state.firstBatting='us';render()">${t('btn_your_team_tab')}</button>
+        <button class="btn compact ${state.firstBatting==='them'?'':'ghost'}" ${state.gameStarted?'disabled':''} onclick="state.firstBatting='them';render()">${t('btn_opponent_tab')}</button>
+      </div>
+      <label style="margin-top:10px;">${t('lbl_pitching')}</label>
+      <div class="row">
+        <button class="btn compact ${state.trackPitching?'':'ghost'}" ${state.gameStarted?'disabled':''} onclick="state.trackPitching=true;render()">${t('btn_track_pitching')}</button>
+        <button class="btn compact ${!state.trackPitching?'':'ghost'}" ${state.gameStarted?'disabled':''} onclick="state.trackPitching=false;render()">${t('btn_no_pitching')}</button>
+      </div>
+    </div>
+
+    <h2 class="section-title">${t('hdr_rosters')}</h2>
+    <div class="card">
+      <div class="teamtabs">
+        <button class="${state.setupTeam==='us'?'active':''}" onclick="state.setupTeam='us';render()">${t('btn_your_team_tab')}</button>
+        <button class="${state.setupTeam==='them'?'active':''}" onclick="state.setupTeam='them';render()">${t('btn_opponent_tab')}</button>
+      </div>
+      <input type="text" class="pg-teamname" value="${tm.name}" ${state.gameStarted?'disabled':''} oninput="team('${state.setupTeam}').name=this.value">
+      <input type="file" id="scanCameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleScanFile(this)">
+      <input type="file" id="scanLibraryInput" accept="image/*" style="display:none" onchange="handleScanFile(this)">
+      ${renderRosterBody(tm)}
+    </div>
+
+    ${!state.gameStarted?`
+    ${state.setupError?`<div class="card" style="border-color:var(--clay); color:var(--clay); font-size:13px; font-weight:700;">${state.setupError}</div>`:''}
+    <button id="startGameBtn" class="btn clay block" onclick="handleStartGamePress(event)">${t('btn_start_game')}</button>
+    `:`<div class="card"><div style="font-size:13px;">Game in progress — you can still edit names/numbers, add substitutes, and reorder here. Use the <b>Batter</b> button in the quick bar to change who's currently up.</div></div>`}
+  `;
+}
+// ---------------- ROSTER EDITOR (Batting Order / Bench) ----------------
+// Pre-game: group = player.group, order = tm.players. In-game: tm.lineup is the batting order, Bench is everyone else;
+// the player at bat is subbed (⇄), never removed or dragged out.
+function rosterGroupLists(key){
+  const tm = team(key);
+  if(!state.gameStarted){
+    return { lineup: tm.players.filter(p=>(p.group||'lineup')!=='bench'), bench: tm.players.filter(p=>p.group==='bench') };
+  }
+  const inLineup = new Set(tm.lineup);
+  return { lineup: tm.lineup.map(id=>tm.players.find(p=>p.id===id)).filter(Boolean), bench: tm.players.filter(p=>!inLineup.has(p.id)) };
+}
+// Index just past the last Batting Order row in tm.players.
+function lineupEnd(tm){ let e = 0; tm.players.forEach((p,i)=>{ if((p.group||'lineup')!=='bench') e = i+1; }); return e; }
+// Imported rows fill the first empty Batting Order rows in order, then append after the last one.
+function insertImportedIntoLineup(tm, rows){
+  let ri = 0;
+  for(let i=0; i<tm.players.length && ri<rows.length; i++){
+    const p = tm.players[i];
+    if((p.group||'lineup')!=='bench' && p.name.trim()==='' && p.num.trim()===''){
+      p.name = rows[ri].name; p.num = rows[ri].num; ri++;
+    }
+  }
+  if(ri<rows.length){
+    const remaining = rows.slice(ri).map(r=>({id:uid(), num:r.num, name:r.name, group:'lineup'}));
+    tm.players.splice(lineupEnd(tm), 0, ...remaining);
+  }
+}
+function renderRosterBody(tm){
+  const { lineup, bench } = rosterGroupLists(state.setupTeam);
+  const importRow = !state.gameStarted ? `
+    <div style="border-top:1px dashed var(--line); margin:0 0 12px;"></div>
+    <label>${t('quick_import')}</label>
+    <div class="import-row">
+      <button class="import-btn ${state.pastePanelOpen?'active':''}" id="pasteToggleBtn" onclick="togglePastePanel()">${PASTE_ICON}<span>${t('btn_paste')}</span></button>
+      <button class="import-btn" onclick="triggerFromImage()">${LIBRARY_ICON}<span>${t('btn_from_image')}</span></button>
+      <button class="import-btn" onclick="triggerScan()">${SCAN_ICON}<span>${t('btn_scan')}</span></button>
+    </div>
+    <div class="paste-panel" id="pastePanel" style="display:${state.pastePanelOpen?'block':'none'};">
+      <label style="text-transform:none; letter-spacing:normal; font-size:12.5px;">${pasteLabelHTML()}</label>
+      <div class="row" style="margin-bottom:8px; align-items:center; gap:8px;">
+        <span style="flex:none; font-size:11.5px; color:#6b6552; font-weight:600;">${t('lbl_first_number_is')}</span>
+        <button class="import-btn ${state.importFirstNumberMeaning==='order'?'active':''}" style="height:34px;" onclick="setImportFirstMeaning('order')">${t('btn_first_num_order')}</button>
+        <button class="import-btn ${state.importFirstNumberMeaning==='jersey'?'active':''}" style="height:34px;" onclick="setImportFirstMeaning('jersey')">${t('btn_first_num_jersey')}</button>
+      </div>
+      <div style="display:flex; gap:8px; align-items:stretch;">
+        <textarea id="pasteBox" style="flex:1 1 50%; min-width:0;" oninput="onPasteInput(this.value)" placeholder="${t('paste_placeholder')}">${escapeHtml(state.pasteDraftText)}</textarea>
+        <div id="pastePreview" class="paste-preview" style="flex:1 1 50%; min-width:0; margin-top:0; height:148px; max-height:none;">${pastePreviewHTML()}</div>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <button class="btn ghost small" onclick="clearPastePanel()">${t('btn_paste_clear')}</button>
+        <button class="btn ghost small" onclick="showPastePreview()">${t('btn_paste_preview')}</button>
+        <button class="btn clay small" onclick="applyPastedRoster()">${t('btn_paste_add')}</button>
+      </div>
+    </div>
+  ` : '';
+  const rosterNote = !state.gameStarted ? `<div style="font-size:11px;color:#8a8373;margin:10px 0 4px;">${t('ocr_tip')}</div><div style="font-size:11px;color:#8a8373;margin:0 0 4px;">${t('rosters_from_rows_note')}</div><div style="font-size:11px;color:#8a8373;margin:0 0 12px;">${t('quick_start_note')}</div>` : '';
+  return `
+    ${importRow}
+    ${rosterNote}
+    <div class="group-label">
+      <span class="txt">${t('hdr_batting_order')}</span>
+      <span class="group-count">${lineup.length}</span>
+    </div>
+    <div class="pg-roster-list" id="pgLineupList">
+      ${lineup.length ? lineup.map((p,i)=>pgRowHTML(p,i+1,'lineup')).join('') : `<div class="empty-slot">${t('lineup_empty')}</div>`}
+    </div>
+    <button class="btn ghost pg-row-height" onclick="addRosterRow('lineup')">${t('btn_add_row')}</button>
+
+    <div class="group-label bench">
+      <span class="txt">${t('hdr_bench')}</span>
+      <span class="group-count">${bench.length}</span>
+    </div>
+    <div class="pg-roster-list" id="pgBenchList">
+      ${bench.length ? bench.map(p=>pgRowHTML(p,null,'bench')).join('') : `<div class="empty-slot">${t('bench_empty')}</div>`}
+    </div>
+    <button class="btn ghost pg-row-height" onclick="addRosterRow('bench')">${t('btn_add_row')}</button>
+    ${state.gameStarted ? `<button class="btn ghost pg-row-height" style="margin-top:14px;" ${state.history.length?'':'disabled'} onclick="undo()">${t('btn_undo')}</button>` : ''}
+  `;
+}
+function pgRowHTML(p, slotNum, group){
+  const key = state.setupTeam;
+  const tm = team(key);
+  let actionBtn;
+  if(state.gameStarted && group==='lineup'){
+    actionBtn = `<button class="pg-icon-btn pg-sub" title="Substitute" onclick="openSubSheet('${key}', tm_lineup_indexOf('${key}','${p.id}'))">⇄</button>`;
+  } else {
+    const locked = state.gameStarted && (tm.lineup.includes(p.id) || tm.stats[p.id]);
+    actionBtn = locked ? '' : `<button class="pg-icon-btn pg-remove" onclick="removeRosterRow('${p.id}')">✕</button>`;
+  }
+  return `
+  <div class="pg-row-wrap">
+    ${slotNum!==null ? `<div class="pg-slot-num">${slotNum}</div>` : `<div class="pg-slot-num pg-dash">–</div>`}
+    <div class="pg-row" data-id="${p.id}" data-group="${group}">
+      <div class="pg-grip" data-pg-handle>${GRIP_ICON}</div>
+      <input class="pg-num" type="text" placeholder="#" value="${p.num}" maxlength="3" oninput="updateRosterField('${p.id}','num',this.value)">
+      <input class="pg-name" type="text" placeholder="Name" value="${p.name}" oninput="updateRosterField('${p.id}','name',this.value)">
+      ${actionBtn}
+    </div>
+  </div>`;
+}
+// lets the inline onclick look up a fresh index at click time
+function tm_lineup_indexOf(key,id){ return team(key).lineup.indexOf(id); }
+function updateRosterField(id, field, val){
+  const p = team(state.setupTeam).players.find(x=>x.id===id);
+  if(p) p[field] = val;
+}
+function addRosterRow(group){
+  const key = state.setupTeam;
+  const tm = team(key);
+  const p = {id:uid(), name:'', num:'', group};
+  if(state.gameStarted){
+    pushHistory();
+    tm.players.push(p);
+    if(group==='lineup'){ ensureStats(key,p.id); tm.lineup.push(p.id); }
+  } else {
+    tm.players.push(p);
+  }
+  render();
+}
+function removeRosterRow(id){
+  const key = state.setupTeam;
+  const tm = team(key);
+  const removed = tm.players.find(p=>p.id===id);
+  if(!removed) return;
+  if(state.gameStarted && (tm.lineup.includes(id) || tm.stats[id])) return; // guard: never delete anyone with a stat record
+  if(state.gameStarted) pushHistory();
+  tm.players = tm.players.filter(p=>p.id!==id);
+  if(!state.gameStarted && !tm.players.some(p=>(p.group||'lineup')===removed.group)){
+    // Pre-game, keep at least one editable row per group.
+    tm.players.push({id:uid(), name:'', num:'', group:removed.group});
+  }
+  render();
+}
+
+// ---- unified import parser (paste / image / scan all feed this one function) ----
+// firstMeaning: 'order' or 'jersey' = what the first bare number means (jersey: row order = batting order).
+// With two numbers, the first follows firstMeaning and the second is the other type.
+function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function parseImportText(text, firstMeaning){
+  const lines = (text||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const parts = [];
+  lines.forEach(line=>{
+    // Several "<num> Name" players crammed on one line (2+ number-letter clusters); "3 12 Ohtani" has one, so it stays intact.
+    const clusters = line.match(/\d+\s*[A-Za-z]/g) || [];
+    if(clusters.length >= 2){
+      line.split(/(?=\d+\s*[A-Za-z])/).map(s=>s.trim()).filter(Boolean).forEach(p=>parts.push(p));
+    } else {
+      parts.push(line);
+    }
+  });
+  const rows = [];
+  // One number is read per firstMeaning; a second number is always the other type.
+  const split = (n1, n2)=> n2 ? (firstMeaning==='order' ? {order:n1, jersey:n2} : {order:n2, jersey:n1})
+                              : (firstMeaning==='order' ? {order:n1, jersey:''} : {order:null, jersey:n1});
+  const RE_NAME_NUM = /^([A-Za-z][A-Za-z'\-. ]*?)(?:\s*,\s*|\s+|\s*#\s*)#?(\d{1,3})$/;
+  let tm2;
+  parts.forEach(part=>{
+    // Number-only row (no name): keep it.
+    const mn = part.match(/^#?\s*(\d{1,3})\s*[-.\)]?\s*(?:#?\s*(\d{1,3})\s*[-.\)]?\s*)?$/);
+    if(mn){
+      const {order, jersey} = split(mn[1], mn[2]||null);
+      rows.push({order, num:jersey, name:''});
+      return;
+    }
+    const m = part.match(/^#?\s*(\d{1,3})\s*[-.\)]?\s*(?:#?\s*(\d{1,3})\s*[-.\)]?\s*)?(.+)$/);
+    if(m && m[1] && m[3] && /[A-Za-z]/.test(m[3])){
+      let name = m[3].trim();
+      let {order, jersey} = split(m[1], m[2]||null);
+      if(order && !jersey){ // leading number was the batting order -> a trailing number on the name is the jersey ("1 Mark 12")
+        const tn = name.match(/^(.*?[A-Za-z][^\d]*?)(?:\s*,\s*|\s+|\s*#\s*)#?(\d{1,3})$/);
+        if(tn){ name = tn[1].trim(); jersey = tn[2]; }
+      }
+      rows.push({order, num:jersey, name});
+    } else if((tm2 = part.match(RE_NAME_NUM))){
+      // name + separated trailing number ("Mark 12", "Mark #12", "Mark, 12") = jersey; "Mark12" is not split.
+      rows.push({order:null, num:tm2[2], name:tm2[1].trim()});
+    } else if(/,/.test(part) && !/\d/.test(part)){
+      part.split(',').map(s=>s.trim()).filter(Boolean).forEach(nm=>rows.push({order:null, num:'', name:nm}));
+    } else if(/^[A-Za-z][A-Za-z'\-. ]*\d*$/.test(part)){ // digits glued to letters ("Mark12") stay part of the name
+      rows.push({order:null, num:'', name:part});
+    }
+  });
+  return rows;
+}
+function insertBlankLineupRow(tm){ tm.players.splice(lineupEnd(tm), 0, {id:uid(), num:'', name:'', group:'lineup'}); }
+// Rows with an explicit order go to that slot (adding blank rows as needed); the rest fill the first empty slots, then append.
+function applyImportedRows(tm, rows){
+  const explicit = rows.filter(r=>r.order);
+  const implicit = rows.filter(r=>!r.order).map(r=>({num:r.num, name:r.name}));
+  explicit.forEach(r=>{
+    const idx = Number(r.order)-1;
+    if(idx<0) return;
+    let lineupRows = tm.players.filter(p=>(p.group||'lineup')!=='bench');
+    while(lineupRows.length<=idx){
+      insertBlankLineupRow(tm);
+      lineupRows = tm.players.filter(p=>(p.group||'lineup')!=='bench');
+    }
+    const target = lineupRows[idx];
+    if(r.name) target.name = r.name; // a number-only row must not blank out an existing name
+    if(r.num) target.num = r.num;
+  });
+  if(implicit.length) insertImportedIntoLineup(tm, implicit);
+}
+function syncPasteDraft(){
+  const el = document.getElementById('pasteBox');
+  if(el) state.pasteDraftText = el.value;
+}
+function setImportFirstMeaning(v){ syncPasteDraft(); state.importFirstNumberMeaning = v; render(); }
+function pastePreviewHTML(){
+  if(!state.pastePreviewShown) return `<div style="color:#A39C88;">${t('paste_preview_hint')}</div>`;
+  const rows = parseImportText(state.pasteDraftText, state.importFirstNumberMeaning);
+  return rows.map(r=>`<div>⚾ ${r.order? r.order+'. ' : ''}${r.num? '#'+r.num+' ' : ''}${escapeHtml(r.name)}</div>`).join('') || '<div>No rows detected</div>';
+}
+function refreshPastePreview(){ const el = document.getElementById('pastePreview'); if(el) el.innerHTML = pastePreviewHTML(); }
+function onPasteInput(v){ state.pasteDraftText = v; if(state.pastePreviewShown) refreshPastePreview(); }
+function clearPastePanel(){
+  state.pasteDraftText = '';
+  const el = document.getElementById('pasteBox'); if(el) el.value = '';
+  refreshPastePreview();
+}
+function showPastePreview(){ syncPasteDraft(); state.pastePreviewShown = true; refreshPastePreview(); }
+function applyPastedRoster(){
+  const rows = parseImportText(document.getElementById('pasteBox').value, state.importFirstNumberMeaning);
+  if(!rows.length) return;
+  // Confirm if a stray/misread number would balloon the lineup.
+  const tm = team(state.setupTeam);
+  const maxOrder = Math.max(0, ...rows.filter(r=>r.order).map(r=>Number(r.order)));
+  const lineupCount = tm.players.filter(pl=>(pl.group||'lineup')!=='bench').length;
+  if(maxOrder>10 && maxOrder>lineupCount && !confirm(t('confirm_big_lineup').replace('{n}', maxOrder))) return;
+  applyImportedRows(tm, rows);
+  state.pasteDraftText = '';
+  state.pastePanelOpen = false;
+  render();
+}
+function togglePastePanel(){
+  syncPasteDraft();
+  state.pastePanelOpen = !state.pastePanelOpen;
+  render();
+}
+
+// ---- drag-to-reorder (pointer-based; edits the DOM while dragging, render() only on drop) ----
+let pgDrag = null;
+function attachPreGameDragHandlers(){
+  document.querySelectorAll('[data-pg-handle]').forEach(h=>{
+    h.onpointerdown = (e)=>startPreGameDrag(e, h.closest('.pg-row'));
+  });
+}
+function startPreGameDrag(e, rowEl){
+  if(!rowEl) return;
+  e.preventDefault();
+  const rect = rowEl.getBoundingClientRect();
+  const ghost = rowEl.cloneNode(true);
+  ghost.classList.add('pg-drag-ghost');
+  ghost.style.width = rect.width+'px';
+  ghost.style.left = rect.left+'px';
+  ghost.style.top = rect.top+'px';
+  document.body.appendChild(ghost);
+  rowEl.classList.add('pg-dragging');
+  pgDrag = { rowEl, ghost, offsetY: e.clientY-rect.top, dropTarget:null, dropEmptyGroup:null };
+  document.onpointermove = onPreGameDragMove;
+  document.onpointerup = onPreGameDragEnd;
+  document.onpointercancel = onPreGameDragEnd;
+}
+function onPreGameDragMove(e){
+  if(!pgDrag) return;
+  pgDrag.ghost.style.top = (e.clientY-pgDrag.offsetY)+'px';
+  document.querySelectorAll('.pg-drop-line').forEach(l=>l.remove());
+  const hits = document.elementsFromPoint(e.clientX, e.clientY);
+  const under = hits.find(el=>el.classList && el.classList.contains('pg-row') && el!==pgDrag.rowEl);
+  pgDrag.dropTarget = null; pgDrag.dropEmptyGroup = null;
+  if(under){
+    const wrap = under.closest('.pg-row-wrap') || under;
+    const r = wrap.getBoundingClientRect();
+    const before = e.clientY < r.top + r.height/2;
+    const line = document.createElement('div');
+    line.className = 'pg-drop-line';
+    wrap.parentNode.insertBefore(line, before ? wrap : wrap.nextSibling);
+    pgDrag.dropTarget = { id: under.dataset.id, group: under.dataset.group, before };
+  } else {
+    const emptyList = hits.find(el=>el.id==='pgLineupList' || el.id==='pgBenchList');
+    if(emptyList) pgDrag.dropEmptyGroup = emptyList.id==='pgLineupList' ? 'lineup' : 'bench';
+  }
+}
+function onPreGameDragEnd(){
+  if(!pgDrag) return;
+  document.querySelectorAll('.pg-drop-line').forEach(l=>l.remove());
+  pgDrag.ghost.remove();
+  if(pgDrag.rowEl) pgDrag.rowEl.classList.remove('pg-dragging');
+  if(!pgDrag.rowEl || !document.contains(pgDrag.rowEl)){
+    // Orphaned drag (cancelled, or a render mid-drag): clear stale state, leave data untouched.
+    document.onpointermove = null; document.onpointerup = null; document.onpointercancel = null;
+    pgDrag = null;
+    return;
+  }
+  const draggedId = pgDrag.rowEl.dataset.id;
+  const fromGroup = pgDrag.rowEl.dataset.group;
+  const key = state.setupTeam;
+  const tm = team(key);
+
+  if(!state.gameStarted){
+    const fromIdx = tm.players.findIndex(p=>p.id===draggedId);
+    if(fromIdx>=0){
+      const [moved] = tm.players.splice(fromIdx,1);
+      if(pgDrag.dropTarget){
+        moved.group = pgDrag.dropTarget.group;
+        let toIdx = tm.players.findIndex(p=>p.id===pgDrag.dropTarget.id);
+        if(!pgDrag.dropTarget.before) toIdx += 1;
+        tm.players.splice(toIdx, 0, moved);
+      } else if(pgDrag.dropEmptyGroup){
+        moved.group = pgDrag.dropEmptyGroup;
+        tm.players.push(moved);
+      } else {
+        tm.players.splice(fromIdx, 0, moved); // dropped somewhere invalid — put it back
+      }
+    }
+  } else {
+    // In-game: reorder, promote from Bench, or demote to Bench, except the player at bat (use Sub ⇄ or wait).
+    const toGroup = pgDrag.dropTarget ? pgDrag.dropTarget.group : pgDrag.dropEmptyGroup;
+    if(fromGroup==='lineup' && toGroup==='bench'){
+      if(draggedId === tm.lineup[tm.battingIdx]){
+        // no-op — can't bench the player currently at bat; row snaps back on next render
+      } else {
+        pushHistory();
+        const curBatterId = tm.lineup[tm.battingIdx];
+        tm.lineup.splice(tm.lineup.indexOf(draggedId), 1);
+        tm.battingIdx = tm.lineup.indexOf(curBatterId);
+      }
+    } else if(toGroup==='lineup'){
+      pushHistory();
+      const curBatterId = tm.lineup[tm.battingIdx];
+      if(fromGroup==='lineup') tm.lineup.splice(tm.lineup.indexOf(draggedId),1);
+      else {
+        ensureStats(key, draggedId);
+        if(!tm.subHistory) tm.subHistory = {};
+        tm.subHistory[draggedId] = Object.assign({}, tm.subHistory[draggedId], { inInning: state.inning });
+      }
+      let toIdx = pgDrag.dropTarget ? tm.lineup.indexOf(pgDrag.dropTarget.id) : tm.lineup.length;
+      if(pgDrag.dropTarget && !pgDrag.dropTarget.before) toIdx += 1;
+      if(toIdx<0) toIdx = tm.lineup.length;
+      tm.lineup.splice(toIdx, 0, draggedId);
+      tm.battingIdx = tm.lineup.indexOf(curBatterId);
+    }
+  }
+  document.onpointermove = null; document.onpointerup = null; document.onpointercancel = null;
+  pgDrag = null;
+  render();
+}
+// ---------------------------------------------------------------------------------------------
+// ---------------- ROSTER PHOTO SCAN (Tesseract.js OCR, client-side only) ----------------
+function triggerScan(){ syncPasteDraft(); document.getElementById('scanCameraInput').click(); }
+function triggerFromImage(){ syncPasteDraft(); document.getElementById('scanLibraryInput').click(); }
+
+// HEIC/HEIF (iPhone default) is converted to JPEG via heic2any first; canvas/Tesseract can't decode it outside Safari.
+function handleScanFile(input){
+  const file = input.files[0];
+  const teamKey = state.setupTeam;
+  input.value = ''; // allow re-selecting the same file next time
+  if(!file) return;
+  const isHeic = /\.hei[cf]$/i.test(file.name) || /heic|heif/i.test(file.type);
+  const proceedWithBlob = (blob)=>{
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        state.sheet = {
+          outcome:'SCAN_CROP', teamKey,
+          originalImage: img, rawImage: img,
+          tiltDeg: 0, cropRect: scanCropFullRectFor(img), drag: null, detected: null,
+          pickedColors: [], pickMode: false, scanResult: null
+        };
+        render();
+      };
+      img.onerror = ()=>{ alert(t('scan_fail')); };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(blob);
+  };
+  if(isHeic){
+    loadLib('heic2any').then(h=>h({ blob:file, toType:'image/jpeg', quality:0.92 })).then(proceedWithBlob).catch(()=>{ alert(t('scan_fail')); });
+  } else {
+    proceedWithBlob(file);
+  }
+}
+
+// ---- Crop/rotate sheet (SCAN_CROP): drags and the tilt slider redraw the canvas directly (render() would recreate it
+// mid-drag); only discrete actions call render(). ----
+function scanCropDisplayScaleFor(im){
+  const maxW = Math.min(360, window.innerWidth - 60); // leaves ~30px scroll lanes either side of the canvas
+  return Math.min(1, maxW / im.width);
+}
+function scanCropDisplayScale(){ return scanCropDisplayScaleFor(state.sheet.rawImage); }
+// Default crop = the whole image, so the frame (and its handles) is visible from the start.
+function scanCropFullRectFor(im){
+  const k = scanCropDisplayScaleFor(im);
+  return { x:0, y:0, w:Math.floor(im.width*k), h:Math.floor(im.height*k) };
+}
+function scanCropCssRatio(){
+  const c = document.getElementById('scanCropCanvas'); if(!c) return 1;
+  const r = c.getBoundingClientRect(); return r.width>0 ? c.width/r.width : 1;
+}
+// Corners first so they win hit-tests over edge handles on small frames.
+function scanCropHandlePoints(r){
+  const cx = r.x+r.w/2, cy = r.y+r.h/2, x1 = r.x+r.w, y1 = r.y+r.h;
+  return [['nw',r.x,r.y],['ne',x1,r.y],['se',x1,y1],['sw',r.x,y1],['n',cx,r.y],['e',x1,cy],['s',cx,y1],['w',r.x,cy]];
+}
+function drawScanCropCanvas(){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
+  const canvas = document.getElementById('scanCropCanvas'); if(!canvas) return;
+  const scale = scanCropDisplayScale();
+  canvas.width = s.rawImage.width * scale;
+  canvas.height = s.rawImage.height * scale;
+  const ctx = canvas.getContext('2d');
+  const tilt = (s.tiltDeg||0) * Math.PI/180;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.translate(canvas.width/2, canvas.height/2);
+  ctx.rotate(tilt);
+  ctx.drawImage(s.rawImage, -canvas.width/2, -canvas.height/2, canvas.width, canvas.height);
+  ctx.restore();
+  const r = s.cropRect;
+  if(r){
+    const W = canvas.width, H = canvas.height, ratio = scanCropCssRatio();
+    ctx.fillStyle = 'rgba(0,0,0,0.38)'; // dim everything outside the crop
+    ctx.fillRect(0,0,W,r.y); ctx.fillRect(0,r.y+r.h,W,H-(r.y+r.h)); ctx.fillRect(0,r.y,r.x,r.h); ctx.fillRect(r.x+r.w,r.y,W-(r.x+r.w),r.h);
+    if(s.detected && s.detected.length){ // Scan Tags detection result: blue = number, red = name, numbered per row
+      ctx.setLineDash([]); ctx.lineWidth = 2*ratio; const fs = 10*ratio;
+      s.detected.forEach((d,i)=>{
+        [[d.num,'#1E6FFF'],[d.name,'#E5322D']].forEach(([b,col])=>{
+          if(!b) return; ctx.strokeStyle = col;
+          ctx.strokeRect(b.x0*scale, b.y0*scale, (b.x1-b.x0)*scale, (b.y1-b.y0)*scale);
+        });
+        const ref = d.name || d.num;
+        if(ref){
+          const lx = ref.x0*scale, ly = Math.max(ref.y0*scale, fs+3*ratio);
+          ctx.fillStyle = '#163C2C'; ctx.fillRect(lx, ly-fs-3*ratio, fs*1.9, fs+3*ratio);
+          ctx.fillStyle = '#fff'; ctx.font = 'bold '+fs+'px monospace'; ctx.fillText(String(i+1), lx+3*ratio, ly-3*ratio);
+        }
+      });
+    }
+    ctx.strokeStyle = '#FFB800'; ctx.lineWidth = 2*ratio; ctx.setLineDash([6*ratio,4*ratio]);
+    ctx.strokeRect(r.x+ratio, r.y+ratio, r.w-2*ratio, r.h-2*ratio);
+    ctx.setLineDash([]);
+    const hs = 12*ratio;
+    scanCropHandlePoints(r).forEach(([n,x,y])=>{
+      ctx.fillStyle = '#FFB800'; ctx.strokeStyle = '#8a6100'; ctx.lineWidth = 1.5*ratio;
+      const px = Math.min(Math.max(x, hs/2), W-hs/2), py = Math.min(Math.max(y, hs/2), H-hs/2); // keep handles inside the image
+      ctx.fillRect(px-hs/2, py-hs/2, hs, hs); ctx.strokeRect(px-hs/2, py-hs/2, hs, hs);
+    });
+  }
+}
+function scanCropCanvasPoint(e){
+  const canvas = document.getElementById('scanCropCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const t0 = e.touches ? (e.touches[0] || e.changedTouches[0]) : e;
+  return { x:(t0.clientX-rect.left)*canvas.width/rect.width, y:(t0.clientY-rect.top)*canvas.height/rect.height };
+}
+// Hit-test: a handle (resize), the frame interior (move), or outside the frame (draw a new box).
+function scanCropHit(s, p){
+  const hs = 22*scanCropCssRatio();
+  for(const [n,x,y] of scanCropHandlePoints(s.cropRect)){ if(Math.abs(p.x-x)<=hs && Math.abs(p.y-y)<=hs) return n; }
+  const r = s.cropRect;
+  return (p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h) ? 'move' : 'draw';
+}
+function scanCropDragStart(e){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
+  e.preventDefault();
+  const p = scanCropCanvasPoint(e);
+  if(s.pickMode){ scanCropPickColorAt(p); return; }
+  const mode = scanCropHit(s, p);
+  s.drag = { mode, p0:p, r0:Object.assign({}, s.cropRect) };
+  if(mode==='draw') s.cropRect = { x:p.x, y:p.y, w:0, h:0 };
+}
+function scanCropDragMove(e){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP' || !s.drag) return;
+  e.preventDefault();
+  const canvas = document.getElementById('scanCropCanvas'), W = canvas.width, H = canvas.height;
+  const clamp = (v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  const p = scanCropCanvasPoint(e), d = s.drag, r0 = d.r0, MIN = 24*scanCropCssRatio();
+  const dx = p.x-d.p0.x, dy = p.y-d.p0.y;
+  let x0 = r0.x, y0 = r0.y, x1 = r0.x+r0.w, y1 = r0.y+r0.h;
+  if(d.mode==='move'){
+    x0 = clamp(r0.x+dx, 0, W-r0.w); y0 = clamp(r0.y+dy, 0, H-r0.h); x1 = x0+r0.w; y1 = y0+r0.h;
+  } else if(d.mode==='draw'){
+    x0 = clamp(Math.min(d.p0.x,p.x),0,W); x1 = clamp(Math.max(d.p0.x,p.x),0,W);
+    y0 = clamp(Math.min(d.p0.y,p.y),0,H); y1 = clamp(Math.max(d.p0.y,p.y),0,H);
+  } else {
+    if(d.mode.includes('w')) x0 = clamp(r0.x+dx, 0, x1-MIN);
+    if(d.mode.includes('e')) x1 = clamp(x1+dx, x0+MIN, W);
+    if(d.mode.includes('n')) y0 = clamp(r0.y+dy, 0, y1-MIN);
+    if(d.mode.includes('s')) y1 = clamp(y1+dy, y0+MIN, H);
+  }
+  s.cropRect = { x:x0, y:y0, w:x1-x0, h:y1-y0 };
+  drawScanCropCanvas();
+}
+function scanCropDragEnd(){
+  const s = state.sheet; if(!s || !s.drag) return;
+  // A drawn box too small to be intentional (a stray tap) restores the previous frame.
+  if(s.drag.mode==='draw' && (s.cropRect.w < 24*scanCropCssRatio() || s.cropRect.h < 24*scanCropCssRatio())){ s.cropRect = s.drag.r0; drawScanCropCanvas(); }
+  s.drag = null;
+}
+function scanCropTiltChange(val){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
+  s.tiltDeg = Number(val); s.detected = null;
+  const lbl = document.getElementById('scanTiltVal'); if(lbl) lbl.textContent = val;
+  drawScanCropCanvas();
+}
+// Listeners sit on the canvas itself (touch-action:none there only) so the side gutters stay scrollable.
+function initScanCropCanvas(){
+  const canvas = document.getElementById('scanCropCanvas'); if(!canvas) return;
+  drawScanCropCanvas();
+  ['mousedown','touchstart'].forEach(ev=>canvas.addEventListener(ev, scanCropDragStart, {passive:false}));
+  ['mousemove','touchmove'].forEach(ev=>canvas.addEventListener(ev, scanCropDragMove, {passive:false}));
+  ['mouseup','touchend','touchcancel','mouseleave'].forEach(ev=>canvas.addEventListener(ev, scanCropDragEnd));
+}
+function scanCropRotate90(dir){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
+  const w = s.rawImage.width, h = s.rawImage.height;
+  const c = document.createElement('canvas');
+  c.width = h; c.height = w;
+  const ctx = c.getContext('2d');
+  ctx.translate(c.width/2, c.height/2);
+  ctx.rotate(dir * Math.PI/2);
+  ctx.drawImage(s.rawImage, -w/2, -h/2);
+  const img = new Image();
+  img.onload = ()=>{ s.rawImage = img; s.cropRect = scanCropFullRectFor(img); s.tiltDeg = 0; s.detected = null; render(); };
+  img.src = c.toDataURL('image/png');
+}
+function scanCropReset(){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP') return;
+  s.rawImage = s.originalImage; s.cropRect = scanCropFullRectFor(s.originalImage); s.tiltDeg = 0; s.detected = null;
+  render();
+}
+function scanCropCancel(){ state.sheet = null; render(); }
+// ---------------- ROSTER SCAN: detection + OCR pipeline ----------------
+// Both scans use a full-resolution copy (tilt + crop mapped back from the on-screen canvas), always binarized; results go to the paste textarea.
+//   scanRunDirect: crop -> binarize -> one OCR read (printed lists/tables)
+//   scanRunRows:   detect cards -> group into rows -> OCR number (digits) and name (letters) -> "<num> <name>" lines
+// Tesseract.js v5 recognize() ignores a 4th params arg: one persistent worker + setParameters().
+let ocrWorker = null;
+async function getOcrWorker(){
+  if(!ocrWorker){ const T = await loadLib('Tesseract'); ocrWorker = await T.createWorker('eng'); }
+  return ocrWorker;
+}
+const OCR_WL_BOTH = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'- ";
+const OCR_WL_NUM = "0123456789";
+const OCR_WL_NAME = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'- ";
+const OCR_PSM = '6', OCR_THRESH = 99, OCR_UPSCALE_MIN_SIDE = 150, OCR_DIRECT_MAX_SIDE = 2400;
+const ocrTick = ()=> new Promise(r=>setTimeout(r,20));
+function ocrStatus(msg){ const el = document.querySelector('.sheet .loading-text'); if(el) el.textContent = msg; }
+
+function scanCropTiltedCanvas(){
+  const s = state.sheet, im = s.rawImage;
+  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+  const x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height); // tilt corners must be white, not transparent-black
+  x.translate(c.width/2, c.height/2); x.rotate((s.tiltDeg||0)*Math.PI/180);
+  x.drawImage(im, -c.width/2, -c.height/2);
+  return c;
+}
+function scanCropWorkCanvas(){
+  const full = scanCropTiltedCanvas(), r = state.sheet.cropRect, k = scanCropDisplayScale();
+  if(!r || r.w<4 || r.h<4){ full.ox = 0; full.oy = 0; return full; }
+  const x0 = Math.max(0, Math.round(r.x/k)), y0 = Math.max(0, Math.round(r.y/k));
+  const w = Math.max(1, Math.min(full.width-x0, Math.round(r.w/k))), h = Math.max(1, Math.min(full.height-y0, Math.round(r.h/k)));
+  const out = document.createElement('canvas'); out.width = w; out.height = h;
+  out.getContext('2d').drawImage(full, x0, y0, w, h, 0, 0, w, h);
+  out.ox = x0; out.oy = y0; // offset of this crop within the full-res tilted image (for the detection overlay)
+  return out;
+}
+// Tap-to-pick: averages a 9x9 patch of the full-res tilted image (the display canvas carries the crop tint).
+function scanCropPickColorAt(p){
+  const s = state.sheet, k = scanCropDisplayScale(), full = scanCropTiltedCanvas();
+  const px = Math.max(0, Math.min(full.width-9, Math.round(p.x/k)-4)), py = Math.max(0, Math.min(full.height-9, Math.round(p.y/k)-4));
+  const d = full.getContext('2d').getImageData(px,py,9,9).data; let R=0,G=0,B=0;
+  for(let i=0;i<81;i++){ R+=d[i*4]; G+=d[i*4+1]; B+=d[i*4+2]; }
+  s.pickedColors.push([Math.round(R/81),Math.round(G/81),Math.round(B/81)]); s.pickMode = false;
+  render();
+}
+function scanColorAuto(){ const s=state.sheet; if(!s) return; s.pickedColors=[]; s.pickMode=false; render(); }
+function scanColorPick(){ const s=state.sheet; if(!s) return; s.pickMode=true; render(); }
+function scanColorRemove(i){ const s=state.sheet; if(!s) return; s.pickedColors.splice(i,1); render(); }
+
+// ---- binarization: zero-padding crop -> Bradley adaptive threshold -> border/line removal -> despeckle ----
+// floorFrac>0 adds a contrast floor (suppresses faint table lines); 0 = plain Bradley (colored cards).
+function ocrThreshold(c, tFrac, floorFrac){
+  tFrac = tFrac===undefined ? 0.15 : tFrac; floorFrac = floorFrac||0;
+  const ctx = c.getContext('2d'), w = c.width, h = c.height; if(w<3||h<3) return c;
+  const im = ctx.getImageData(0,0,w,h), d = im.data, g = new Float64Array(w*h);
+  for(let i=0;i<w*h;i++) g[i] = 0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2];
+  const I = new Float64Array((w+1)*(h+1));
+  for(let y=0;y<h;y++){ let rs=0; for(let x=0;x<w;x++){ rs+=g[y*w+x]; I[(y+1)*(w+1)+(x+1)] = I[y*(w+1)+(x+1)]+rs; } }
+  const s2 = Math.max(7, Math.floor(Math.min(w,h)/8));
+  const hist = new Uint32Array(256); for(let i=0;i<w*h;i++) hist[g[i]|0]++;
+  const pct = q=>{ let a=0; const t=q*w*h; for(let v=0;v<256;v++){ a+=hist[v]; if(a>=t) return v; } return 255; };
+  const floor = floorFrac*Math.max(0, pct(0.95)-pct(0.005));
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const cx1=Math.max(0,x-s2), cx2=Math.min(w-1,x+s2), cy1=Math.max(0,y-s2), cy2=Math.min(h-1,y+s2);
+    const cnt = (cx2-cx1+1)*(cy2-cy1+1);
+    const sum = I[(cy2+1)*(w+1)+(cx2+1)]-I[cy1*(w+1)+(cx2+1)]-I[(cy2+1)*(w+1)+cx1]+I[cy1*(w+1)+cx1];
+    const idx = y*w+x, v = (g[idx]*cnt<=sum*(1-tFrac) && sum/cnt-g[idx]>=floor) ? 0 : 255;
+    d[idx*4]=d[idx*4+1]=d[idx*4+2]=v;
+  }
+  ctx.putImageData(im,0,0); return c;
+}
+function ocrBandErase(c){
+  const ctx=c.getContext('2d'), w=c.width, h=c.height, im=ctx.getImageData(0,0,w,h), d=im.data, band=Math.max(2,Math.round(Math.min(w,h)*0.06));
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++) if(x<band||x>=w-band||y<band||y>=h-band){ const i=(y*w+x)*4; d[i]=d[i+1]=d[i+2]=255; }
+  ctx.putImageData(im,0,0); return c;
+}
+// Shared 4-connected blob labeler: cb(x0,y0,x1,y1,count,qx,qy) per blob in `mask` (qx/qy valid only during the callback).
+function ocrBlobs(mask, w, h, cb){
+  const vis=new Uint8Array(w*h), qx=new Int32Array(w*h), qy=new Int32Array(w*h);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const idx=y*w+x; if(!mask[idx]||vis[idx]) continue;
+    let hd=0,tl=0,x0=x,x1=x,y0=y,y1=y; qx[tl]=x; qy[tl]=y; tl++; vis[idx]=1;
+    while(hd<tl){
+      const cx=qx[hd], cy=qy[hd]; hd++;
+      if(cx<x0)x0=cx; if(cx>x1)x1=cx; if(cy<y0)y0=cy; if(cy>y1)y1=cy;
+      for(const [nx,ny] of [[cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]]){
+        if(nx<0||ny<0||nx>=w||ny>=h) continue; const ni=ny*w+nx;
+        if(mask[ni] && !vis[ni]){ vis[ni]=1; qx[tl]=nx; qy[tl]=ny; tl++; }
+      }
+    }
+    cb(x0,y0,x1,y1,tl,qx,qy);
+  }
+}
+// Erases speckle and thin straight border lines (a blob spanning >=85% of the crop but only a few px thick; real glyphs have more cross-extent).
+function ocrDespeckle(c, minPx){
+  const ctx=c.getContext('2d'), w=c.width, h=c.height;
+  minPx = minPx===undefined ? Math.max(6, Math.round(w*h*0.0006)) : minPx;
+  const thin = Math.max(3, Math.round(Math.min(w,h)*0.035));
+  const im=ctx.getImageData(0,0,w,h), d=im.data, mask=new Uint8Array(w*h);
+  for(let i=0;i<w*h;i++) mask[i] = d[i*4]===0 ? 1 : 0;
+  ocrBlobs(mask, w, h, (a,c0,b,c1,tl,qx,qy)=>{
+    const bw=b-a+1, bh=c1-c0+1;
+    if(tl<minPx || (bw>=w*0.85&&bh<=thin) || (bh>=h*0.85&&bw<=thin)){ for(let k=0;k<tl;k++){ const p=(qy[k]*w+qx[k])*4; d[p]=d[p+1]=d[p+2]=255; } }
+  });
+  ctx.putImageData(im,0,0); return c;
+}
+// opts.floor: contrast floor. band=false skips the edge-strip erase (tight text crops). minPx: despeckle floor (small keeps i-dots).
+function ocrBinarize(c, opts){
+  opts = opts||{}; c = ocrThreshold(c, undefined, opts.floor);
+  if(opts.band!==false) c = ocrBandErase(c);
+  return ocrDespeckle(c, opts.minPx);
+}
+// Crops box (src pixels) with no padding, binarizes at native size, then upscales (nearest-neighbor) only if small.
+function ocrCropBox(src, box, opts){
+  const w = Math.max(1,Math.round(box.x1-box.x0)), h = Math.max(1,Math.round(box.y1-box.y0));
+  let nat = document.createElement('canvas'); nat.width=w; nat.height=h;
+  const nx = nat.getContext('2d'); nx.fillStyle='#fff'; nx.fillRect(0,0,w,h);
+  nx.drawImage(src, Math.round(box.x0), Math.round(box.y0), w, h, 0, 0, w, h);
+  nat = ocrBinarize(nat, opts);
+  const eff = Math.min(nat.width,nat.height) < OCR_UPSCALE_MIN_SIDE ? 2.5 : 1;
+  const ow = Math.round(nat.width*eff), oh = Math.round(nat.height*eff);
+  const out = document.createElement('canvas'); out.width=ow; out.height=oh;
+  const ox = out.getContext('2d'); ox.imageSmoothingEnabled = false; ox.drawImage(nat,0,0,nat.width,nat.height,0,0,ow,oh);
+  return out.toDataURL('image/png');
+}
+
+// ---- card detection: ONE pass, generic color distance, no aspect filter ----
+function ocrDist(r,g,b,ref){ const a=r-ref[0], b2=g-ref[1], c=b-ref[2]; return Math.sqrt(a*a+b2*b2+c*c); }
+function ocrSampleBg(d,w,h){
+  let R=0,G=0,B=0,n=0; const m=Math.max(2,Math.floor(Math.min(w,h)*0.03));
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++) if(x<m||x>=w-m||y<m||y>=h-m){ const i=(y*w+x)*4; R+=d[i]; G+=d[i+1]; B+=d[i+2]; n++; }
+  return [R/n,G/n,B/n];
+}
+// Auto: flags pixels far from the edge background; picked colors: flags pixels near any picked color. Returns src-pixel blobs.
+function ocrDetectBoxes(src, picked, thresh){
+  const s = Math.min(1, 500/src.width), w = Math.round(src.width*s), h = Math.round(src.height*s);
+  const c = document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d'); x.drawImage(src,0,0,w,h);
+  const d = x.getImageData(0,0,w,h).data;
+  const manual = picked && picked.length>0, bg = manual ? null : ocrSampleBg(d,w,h);
+  const mask = new Uint8Array(w*h);
+  for(let i=0;i<w*h;i++){
+    const r=d[i*4], g=d[i*4+1], b=d[i*4+2];
+    if(manual){ let m=0; for(const p of picked){ if(ocrDist(r,g,b,p)<thresh){ m=1; break; } } mask[i]=m; }
+    else mask[i] = ocrDist(r,g,b,bg)>thresh ? 1 : 0;
+  }
+  const boxes=[];
+  ocrBlobs(mask, w, h, (x0,y0,x1,y1,cnt)=>{
+    if(cnt<=w*h*0.002) return;                                             // noise
+    const bw=x1-x0+1, bh=y1-y0+1, ratio=Math.max(bw,bh)/Math.max(1,Math.min(bw,bh));
+    if(Math.min(bw,bh)<16 || ratio>10) return;                             // sliver / reflection edge
+    if(bw*bh > 0.6*w*h) return;                                            // background mis-flagged as a card
+    boxes.push({x0:x0/s, y0:y0/s, x1:(x1+1)/s, y1:(y1+1)/s});
+  });
+  return boxes;
+}
+// Cluster blobs into rows by vertical-center proximity.
+function ocrGroupRows(boxes){
+  const bs = boxes.map(b=>({...b, w:b.x1-b.x0, h:b.y1-b.y0, cy:(b.y0+b.y1)/2})).sort((a,b)=>a.cy-b.cy);
+  const rs = [];
+  bs.forEach(b=>{
+    const r = rs[rs.length-1];
+    if(r && Math.abs(b.cy-r.cy) < 0.5*Math.max(b.h,r.h)){
+      r.items.push(b); r.cy = r.items.reduce((a,v)=>a+v.cy,0)/r.items.length; r.h = r.items.reduce((a,v)=>a+v.h,0)/r.items.length;
+    } else rs.push({items:[b], cy:b.cy, h:b.h});
+  });
+  return rs;
+}
+// Per row: squarest blob = number, widest = name. A lone blob is a number if its aspect ratio < 1.5.
+function ocrClassify(rs){
+  return rs.map(r=>{
+    const it = r.items.map(b=>({...b, ar:b.w/b.h}));
+    let num=null, name=null;
+    if(it.length===1){ if(it[0].ar<1.5) num=it[0]; else name=it[0]; }
+    else { const s=it.slice().sort((a,b)=>a.ar-b.ar); num=s[0]; name=s[s.length-1]; }
+    return { num, name, numText:'', nameText:'', numConf:null, nameConf:null };
+  });
+}
+
+// ---- scan button handlers ----
+// Scans stay in the crop sheet and show the result inline; "Ok" commits it to the paste textarea.
+function ocrFail(prevSheet){ state.sheet = prevSheet; render(); alert(t('scan_fail')); }
+function ocrShowResult(prevSheet, text, note, jerseyFirst){
+  prevSheet.scanResult = { text:(text||'').trim(), note, jerseyFirst:!!jerseyFirst };
+  state.sheet = prevSheet; render();
+  setTimeout(()=>{ const el = document.getElementById('scanResult'); if(el) el.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 50);
+}
+function scanResultOk(){
+  const s = state.sheet; if(!s || s.outcome!=='SCAN_CROP' || !s.scanResult || !s.scanResult.text) return;
+  state.setupTeam = s.teamKey;
+  state.pasteDraftText = s.scanResult.text; state.pastePanelOpen = true; state.pastePreviewShown = true;
+  if(s.scanResult.jerseyFirst) state.importFirstNumberMeaning = 'jersey'; // number tiles = jersey numbers; row order = batting order
+  state.sheet = null; render();
+  setTimeout(()=>{ const el = document.getElementById('pastePanel'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); }, 50);
+}
+async function scanRunDirect(){
+  const prev = state.sheet; if(!prev || prev.outcome!=='SCAN_CROP') return;
+  prev.detected = null;
+  let src = scanCropWorkCanvas();
+  state.sheet = { outcome:'SCAN_LOADING' }; render(); await ocrTick();
+  try{
+    const big = Math.max(src.width, src.height);
+    if(big > OCR_DIRECT_MAX_SIDE){
+      const k = OCR_DIRECT_MAX_SIDE/big, c = document.createElement('canvas');
+      c.width = Math.round(src.width*k); c.height = Math.round(src.height*k); c.getContext('2d').drawImage(src,0,0,c.width,c.height); src = c;
+    }
+    const url = ocrCropBox(src, {x0:0,y0:0,x1:src.width,y1:src.height}, {band:false, minPx:4, floor:0.3});
+    const w = await getOcrWorker();
+    await w.setParameters({ tessedit_pageseg_mode:OCR_PSM, tessedit_char_whitelist:OCR_WL_BOTH });
+    ocrStatus(t('scan_reading')); await ocrTick();
+    const { data } = await w.recognize(url);
+    const text = (data.text||'').trim();
+    ocrShowResult(prev, text, text ? '' : t('scan_no_text'), false);
+  }catch(e){ console.error(e); ocrFail(prev); }
+}
+async function scanRunRows(){
+  const prev = state.sheet; if(!prev || prev.outcome!=='SCAN_CROP') return;
+  const src = scanCropWorkCanvas(), picked = (prev.pickedColors||[]).slice();
+  state.sheet = { outcome:'SCAN_LOADING' }; render(); await ocrTick();
+  try{
+    ocrStatus(t('scan_detecting')); await ocrTick();
+    const rows = ocrClassify(ocrGroupRows(ocrDetectBoxes(src, picked, OCR_THRESH)));
+    const ox = src.ox||0, oy = src.oy||0, shift = b=> b ? { x0:b.x0+ox, y0:b.y0+oy, x1:b.x1+ox, y1:b.y1+oy } : null;
+    prev.detected = rows.map(r=>({ num:shift(r.num), name:shift(r.name) }));
+    if(!rows.length){ ocrShowResult(prev, '', t('scan_no_rows'), true); return; }
+    const numJobs=[], nameJobs=[];
+    rows.forEach(r=>{
+      if(r.num) numJobs.push({ url: ocrCropBox(src, r.num), set:(tx,cf)=>{ r.numText = tx.replace(/\D/g,''); r.numConf = cf; } });
+      if(r.name) nameJobs.push({ url: ocrCropBox(src, r.name), set:(tx,cf)=>{ r.nameText = tx; r.nameConf = cf; } });
+    });
+    const w = await getOcrWorker();
+    const pass = async (jobs, label, wl)=>{
+      await w.setParameters({ tessedit_pageseg_mode:OCR_PSM, tessedit_char_whitelist:wl });
+      for(let i=0;i<jobs.length;i++){
+        ocrStatus(`${label} ${i+1}/${jobs.length}…`); await ocrTick();
+        const { data } = await w.recognize(jobs[i].url);
+        jobs[i].set(data.text.trim().replace(/\s+/g,' '), data.confidence);
+      }
+    };
+    await pass(numJobs, t('scan_numbers'), OCR_WL_NUM);
+    await pass(nameJobs, t('scan_names'), OCR_WL_NAME);
+    const text = rows.map(r=>[r.numText.trim(), r.nameText.trim()].filter(Boolean).join(' ')).filter(Boolean).join('\n');
+    const low = rows.filter(r=>(r.numConf!=null&&r.numConf<60)||(r.nameConf!=null&&r.nameConf<60)).length;
+    const note = text ? `${rows.length} ${t('scan_note_rows')}${low?` · ${low} ${t('scan_note_low')}`:''}` : t('scan_no_text');
+    ocrShowResult(prev, text, note, true);
+  }catch(e){ console.error(e); ocrFail(prev); }
+}
+function openSubSheet(key, lineupIndex){ state.sheet = { outcome:'SUB_PLAYER', teamKey:key, lineupIndex }; render(); }
+function confirmSub(newId){
+  const s = state.sheet; if(!s) return;
+  const key = s.teamKey, idx = s.lineupIndex;
+  pushHistory();
+  const tm = team(key);
+  const outId = tm.lineup[idx];
+  tm.lineup[idx] = newId;
+  ensureStats(key, newId);
+  // Record each side's inning for the "/ in Xth" / "/ out Xth" labels; later events overwrite.
+  if(!tm.subHistory) tm.subHistory = {};
+  tm.subHistory[newId] = Object.assign({}, tm.subHistory[newId], { inInning: state.inning });
+  if(outId) tm.subHistory[outId] = Object.assign({}, tm.subHistory[outId], { outInning: state.inning });
+  if(battingKey()===key && tm.battingIdx===idx) state.count = {balls:0, strikes:0, fouls:0};
+  state.sheet = null;
+  render();
+}
+
+// ---------------- SHARED FIELD ART ----------------
+const FIELD_VIEWBOX = "671.139 430 1781.286 1820"; // taller than the art so edge markers (8, 2) and order badges aren't clipped
+// Base centers from the source SVG's rect/transform; 1B nudged +5px so its edge sits flush with the foul line.
+const FIELD_BASE = {
+  1: {x:2145.23, y:1407.21}, // right
+  2: {x:1568.26, y:850.74},  // top
+  3: {x:990.44,  y:1410.60}  // left
+};
+const FIELD_MOUND = {x:1568.7, y:1380.28};
+// Hand-placed fielder coords. P lowered to clear the mound rubber; 1B/3B raised to clear the runner tag.
+const FIELD_FIELDERS = {
+  1:{x:1568.7, y:1470}, 2:{x:1568, y:2110}, 3:{x:2139, y:1131}, 4:{x:1780, y:960},
+  5:{x:993,   y:1135}, 6:{x:1350, y:980},  7:{x:950,  y:760},  8:{x:1568, y:610}, 9:{x:2200, y:760}
+};
+// Render widths match the CSS (.diamond-wrap svg 320px, .fld 150px) so text size can be set in on-screen px.
+const FIELD_VIEWBOX_W = 1781.286;
+const FIELD_RENDER_W_SM = 150;
+// Fielder marker (circle + number): 11px on screen, one style on every sheet.
+function fieldFielderFontSize(renderW){ return 11 * FIELD_VIEWBOX_W / renderW; }
+// Runner label position for the sheet preview (plain text); separate from the Live pill position, which needs more clearance.
+function fieldLabelPos(baseNum){
+  const b = FIELD_BASE[baseNum];
+  const nudge = baseNum===2 ? 10 : 0; // tiny downward nudge for 2nd base only
+  return {x:b.x, y:b.y-95+nudge};
+}
+// Static field art shared by the live diamond and sheet preview (dirt, stripes, mound, foul lines, plate, rubber);
+// each caller layers bases/fielders/labels on top. The defs live once in #fieldDefs.
+// Shared <defs> (filter, dirt/mound gradients, clips, outfield fade), installed once into #fieldDefs.
+// Alternating vertical grass-stripe rects: n stripes of width w starting at x0, colors c0/c1 alternating.
+const FIELD_STRIPES = (x0,w,n,y,h,c0,c1)=>Array.from({length:n},(_,i)=>`<rect x="${+(x0+i*w).toFixed(1)}" y="${y}" width="${w}" height="${h}" fill="${i%2?c1:c0}"/>`).join('');
+const FIELD_DEFS_SHARED = `
+      <filter id="baseShadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.12"/>
+      </filter>
+      <linearGradient id="dirtGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#B9864A"/><stop offset="100%" stop-color="#9F6B37"/>
+      </linearGradient>
+      <radialGradient id="moundGrad" cx="50%" cy="42%" r="60%">
+        <stop offset="0%" stop-color="#C79458"/><stop offset="65%" stop-color="#B27A42"/><stop offset="100%" stop-color="#A26C39"/>
+      </radialGradient>
+      <clipPath id="grassClip"><use href="#grassShape"/></clipPath>
+      <clipPath id="compactFieldClip"><rect x="770" y="740" width="1592" height="1370"/></clipPath>
+      <linearGradient id="outfieldFade" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0"/>
+        <stop offset="82%" stop-color="#FFFFFF" stop-opacity="0"/>
+        <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.22"/>
+      </linearGradient>`;
+// Shared grass-shape use, stripes, mound and outfield fade for both backgrounds.
+const FIELD_GRASS_SHAPE = `<path id="grassShape" d="M 0 0 C 1 1 1 1 2 3 C 8 12 19 18 30 21 C 47 24 63 21 77 11 C 81 8 84 4 87 0 C 89 0 89 0 91 1 C 92 3 539 450 542 453 C 556 466 556 466 559 473 C 559 473 558 474 558 474 C 547 485 543 499 542 513 C 543 528 549 542 559 552 C 559 555 557 557 555 559 C 554 560 108 1006 108 1007 C 106 1008 106 1008 103 1008 C 100 1007 97 1006 94 1004 C 87 1002 72 997 71 997 C 44 990 14 993 -11 1004 C -12 1005 -15 1006 -16 1007 C -19 1007 -20 1006 -22 1005 C -24 1004 -470 557 -471 557 C -472 555 -472 555 -472 553 C -471 550 -469 549 -468 547 C -465 544 -463 541 -461 538 C -460 538 -457 532 -457 531 C -457 530 -455 526 -455 525 C -452 512 -453 497 -460 485 C -461 483 -469 473 -470 473 C -471 471 -471 471 -471 469 C -470 467 -470 467 -468 465 C -467 465 -4 2 -3 1 C -2 0 -2 0 0 0 Z" fill="#3B7438" transform="translate(1526,888)" />`;
+const FIELD_GRASS_MOUND_SHARED = `
+    <use href="#grassShape"/>
+    <g clip-path="url(#grassClip)">${FIELD_STRIPES(960,110,11,650,1700,'#3b7438','#234B28')}</g>
+    <ellipse cx="1568.7" cy="1380.28" rx="93.972" ry="93.974" fill="url(#moundGrad)" stroke="#A26C39" stroke-width="1" stroke-opacity="0.35" filter="url(#baseShadow)" />
+    <rect x="668.566" y="533.307" width="1783.884" height="1690.543" fill="url(#outfieldFade)"/>`;
+
+// Dirt-infield path, verbatim from the project's field SVGs (v10 / v8dgreen).
+const FIELD_DIRT_PATH = `<path id="fieldDirt" d="M1563 692C1607 692 1639 694 1683 699C1723 705 1761 713 1799 723C1832 733 1879 751 1909 766C1944 783 1981 804 2011 826C2043 849 2076 874 2103 900C2135 931 2157 955 2184 987C2211 1020 2231 1050 2253 1084C2276 1119 2294 1152 2312 1188C2319 1201 2355 1283 2355 1298L1699 1965C1700 1980 1709 1996 1710 2018C1711 2034 1709 2052 1704 2067C1700 2080 1688 2104 1680 2112C1670 2125 1655 2137 1641 2145C1632 2152 1605 2161 1593 2163C1575 2167 1560 2168 1541 2164C1525 2161 1508 2155 1493 2145C1478 2135 1467 2125 1455 2110C1446 2099 1435 2081 1431 2066C1427 2050 1424 2032 1424 2014C1425 1998 1436 1970 1434 1965L784 1304C770 1290 792 1250 797 1232C804 1210 818 1184 827 1161C838 1140 851 1115 863 1094C878 1071 890 1050 906 1027C919 1009 937 985 952 968C968 950 989 929 1004 911C1018 895 1046 873 1062 859C1083 843 1102 829 1124 815C1147 800 1167 790 1190 776C1215 764 1236 755 1261 745C1286 736 1308 728 1334 721C1361 715 1382 709 1410 704C1436 701 1461 697 1487 694C1512 692 1563 692 1563 692Z" fill="url(#dirtGrad)" />`;
+// Field defs live once in the hidden #fieldDefs <svg> (outside #app); field SVGs reference them by id.
+// Zero-size, not display:none, so gradients/filters still resolve.
+document.getElementById('fieldDefs').innerHTML = `<defs>${FIELD_DEFS_SHARED}${FIELD_GRASS_SHAPE}${FIELD_DIRT_PATH}</defs>`;
+
+const FIELD_BACKGROUND_SVG = `
+    <g>
+      <rect x="668.6" y="430" width="75.1" height="1820" fill="#234B28"/>${FIELD_STRIPES(743.7,110,15,430,1820,'#3B7438','#234B28')}<rect x="2393.7" y="430" width="58" height="1820" fill="#234B28"/>
+      <polygon points="668.566,2250 668.566,1121.42 1567.2,2014.0 2452.45,1133.03 2452.45,2250" fill="#234B28"/>
+    </g>
+    <use href="#fieldDirt"/>
+    ${FIELD_GRASS_MOUND_SHARED}
+    <polyline points="2452.3 1133.03 1568.43 2016.70" fill="none" stroke="#FCFBF7" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+    <polyline points="666.265 1121.42 1564.70 2015.00" fill="none" stroke="#FCFBF7" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+    <rect x="1535" y="1369" width="66" height="24" fill="#FFFFFF" />
+    <polygon points="1533.003 1950.071 1603.083 1949.953 1604.166 1987.53 1567.187 2023.907 1532.723 1989.805" fill="#F7F5EF" stroke="#D7D1C5" stroke-width="1.5" filter="url(#baseShadow)" />`;
+function fieldBaseRect(n, isOccupied, onclickAttr){
+  const cx = FIELD_BASE[n].x, cy = FIELD_BASE[n].y;
+  const s = isOccupied ? 53.725*2 : 53.725; // doubles in size when occupied, per approved mockup
+  const half = s/2;
+  const fill = isOccupied ? '#FFB800' : '#F7F5EF';
+  const stroke = isOccupied ? '#8a6100' : '#D7D1C5';
+  const clickPart = onclickAttr ? ` style="cursor:pointer;" onclick="${onclickAttr}"` : '';
+  return `<rect x="${cx-half}" y="${cy-half}" width="${s}" height="${s}" transform="rotate(45 ${cx} ${cy})" fill="${fill}" stroke="${stroke}" stroke-width="3" filter="url(#baseShadow)"${clickPart}></rect>`;
+}
+
+// Live-tab diamond: V10 art crop (dirt, stripes, mound, rubber, plate) in the asset's translate(0,55) group, minus its static
+// base squares (fieldBaseRect draws them dynamically). viewBox top extended (830→740) so the 2nd-base runner label isn't clipped.
+// Pills overrunning the side edges spill past the viewBox (.diamond-inner svg has overflow:visible).
+// Coupled if changed: viewBox string, its width scalar, and the CSS width of .diamond-inner.
+const FIELD_VIEWBOX_COMPACT = "770 740 1592 1370";
+const FIELD_VIEWBOX_W_COMPACT = 1592;
+const FIELD_RENDER_W_COMPACT = 318; // matches .diamond-inner width
+// Every pill (runner jersey, pitcher, pitch count) shares one flat 12px on-screen font size.
+function fieldPillFontSize(){ return 12 * FIELD_VIEWBOX_W_COMPACT / FIELD_RENDER_W_COMPACT; }
+// Longest name shown in full in a pill before an ellipsis.
+const PILL_MAX_NAME_CHARS = 11;
+// Pill: "<order>. <name> #<jersey>" (order/jersey optional). 'amber' = runner, 'neutral' = pitcher / pitch count.
+function fieldPillColors(style){
+  return style==='amber'
+    ? { fill:'rgba(255,248,230,0.85)', stroke:'#8a6100', text:'#8a6100' }
+    : { fill:'rgba(255,255,255,0.7)', stroke:'#8C8570', text:'#1C2621' };
+}
+function fieldPillRect(cx, cy, w, h, fs, c){
+  return `<rect x="${cx-w/2}" y="${cy-h/2}" width="${w}" height="${h}" rx="${h/2}" fill="${c.fill}" stroke="${c.stroke}" stroke-width="${fs*0.09}"></rect>`;
+}
+function fieldPillMarkup(cx, cy, order, name, jerseyNum, style){
+  const fs = fieldPillFontSize();
+  const pillH = fs*1.35; // reduced internal vertical padding
+  const orderPart = order? `${order}. ` : '';
+  let displayName = name||'';
+  if(displayName.length>PILL_MAX_NAME_CHARS) displayName = displayName.slice(0,PILL_MAX_NAME_CHARS-1)+'…';
+  const jerseyPart = (jerseyNum && jerseyNum!=='-') ? ` #${jerseyNum}` : '';
+  // Trailing +fs*2 term is ~1 character width of padding on each side of the text.
+  const pillW = Math.max(fs*2.6, (orderPart.length+displayName.length+jerseyPart.length)*fs*0.56 + fs*2);
+  const c = fieldPillColors(style);
+  return `${fieldPillRect(cx, cy, pillW, pillH, fs, c)}
+    <text x="${cx}" y="${cy}" font-family="ui-monospace,monospace" text-anchor="middle" dominant-baseline="central"><tspan font-size="${fs}" font-weight="900" fill="${c.text}">${orderPart}</tspan><tspan font-size="${fs}" font-weight="500" fill="${c.text}">${displayName}</tspan><tspan font-size="${fs}" font-weight="500" fill="${c.text}">${jerseyPart}</tspan></text>`;
+}
+// Runner pill position: above each base, clear of the enlarged occupied square.
+const FIELD_ENLARGED_BASE_HALF_DIAGONAL = 53.725*2*Math.SQRT1_2; // ~76 viewBox units
+function fieldPillLabelPos(baseNum){
+  const b = FIELD_BASE[baseNum];
+  const pillH = fieldPillFontSize()*1.35;
+  const offset = FIELD_ENLARGED_BASE_HALF_DIAGONAL + 8 + pillH/2;
+  return {x:b.x, y:b.y-offset};
+}
+// Simple single-line pill (no order/name/jersey structure) — used for the pitch-count pill.
+function fieldSimplePill(cx, cy, text, style){
+  const fs = fieldPillFontSize();
+  const pillH = fs*1.35;
+  const pillW = Math.max(fs*2.6, text.length*fs*0.58 + fs*2);
+  const c = fieldPillColors(style);
+  return `${fieldPillRect(cx, cy, pillW, pillH, fs, c)}
+    <text x="${cx}" y="${cy}" font-family="ui-monospace,monospace" font-size="${fs}" font-weight="800" fill="${c.text}" text-anchor="middle" dominant-baseline="central">${text}</text>`;
+}
+// Fixed clearance (in viewBox units) kept between the rubber's edges and each pill.
+const FIELD_PITCHER_LABEL_GAP = 10;
+// Pitch-count pill + order/name/jersey pill for the mound; '' when no pitcher is shown.
+function fieldPitcherLabel(){
+  if(!state.trackPitching) return '';
+  const fKey = fieldingKey();
+  const id = team(fKey).currentPitcherId;
+  if(!id) return '';
+  const cx = FIELD_MOUND.x;
+  const fs = fieldPillFontSize();
+  const pillH = fs*1.35;
+  // Rubber (drawn at pre-translate y=1369, height=24) spans mound.y-11.28 to mound.y+12.72.
+  const rubberTop = FIELD_MOUND.y - 11.28;
+  const rubberBottom = FIELD_MOUND.y + 12.72;
+  const countCy = rubberTop - FIELD_PITCHER_LABEL_GAP - pillH/2;
+  const pitchCount = (ensurePitch(fKey, id).pitches||0) + state.count.balls + state.count.strikes + (state.count.fouls||0);
+  const countPill = fieldSimplePill(cx, countCy, 'PC: '+pitchCount, 'neutral');
+  const pillCy = rubberBottom + FIELD_PITCHER_LABEL_GAP + pillH/2;
+  const namePill = fieldPillMarkup(cx, pillCy, battingOrderNum(fKey,id), playerName(fKey,id), playerNum(fKey,id), 'neutral');
+  // Invisible tap target covering the mound and both pills.
+  const topY = countCy - pillH/2;
+  const bottomY = pillCy + pillH/2;
+  const tapHalfW = 110;
+  const tapTop = Math.min(FIELD_MOUND.y - 94, topY);
+  const tapBottom = Math.max(FIELD_MOUND.y + 94, bottomY);
+  const tapTarget = `<rect x="${cx-tapHalfW}" y="${tapTop}" width="${tapHalfW*2}" height="${tapBottom-tapTop}" fill="transparent" pointer-events="all"></rect>`;
+  // One clickable group so a tap on a visible pill (not just the gap) still registers.
+  return `<g style="cursor:pointer;" onclick="openPitcherSheet()">${countPill}${namePill}${tapTarget}</g>`;
+}
+// Static infield art for the Live-tab diamond (V10 asset minus its base squares).
+const FIELD_INFIELD_BACKGROUND_SVG = `
+    <g clip-path="url(#compactFieldClip)">
+    <g transform="translate(0 55)">
+      <use href="#fieldDirt"/>
+      ${FIELD_GRASS_MOUND_SHARED}
+      <path d="M 1002.379 1448.241 C 1002.737 1448.576 1003.09 1448.919 1003.441 1449.268 L 1002.379 1448.241 Z" fill="#F6F4EE" />
+      <path d="M0 0 C21.78 0 43.56 0 66 0 C66 7.92 66 15.84 66 24 C44.22 24 22.44 24 0 24 C0 16.08 0 8.16 0 0 Z " fill="#FFFFFF" transform="translate(1535,1369)" />
+      <polygon points="1533.003 1950.071 1603.083 1949.953 1604.166 1987.53 1567.187 2023.907 1532.723 1989.805" fill="#F7F5EF" stroke="#D7D1C5" stroke-width="1.5" filter="url(#baseShadow)" />
+    </g></g>`;
+function renderDiamond(){
+  const key = battingKey();
+  const b1 = state.bases[1], b2 = state.bases[2], b3 = state.bases[3];
+  const runnerLabels = [1,2,3].map(n=>{
+    const id = state.bases[n]; if(!id) return '';
+    const p = fieldPillLabelPos(n);
+    return fieldPillMarkup(p.x, p.y, battingOrderNum(key,id), playerName(key,id), playerNum(key,id), 'amber');
+  }).join('');
+  return `
+  <div class="diamond-wrap compact">
+    <div class="diamond-inner">
+      <svg viewBox="${FIELD_VIEWBOX_COMPACT}">
+        ${FIELD_INFIELD_BACKGROUND_SVG}
+        <g transform="translate(0 55)">
+          ${fieldPitcherLabel()}
+          ${fieldBaseRect(2, !!b2, 'openRunnerSheet(2)')}
+          ${fieldBaseRect(1, !!b1, 'openRunnerSheet(1)')}
+          ${fieldBaseRect(3, !!b3, 'openRunnerSheet(3)')}
+          ${runnerLabels}
+        </g>
+      </svg>
+      <div class="corner-tag br">
+        Outs
+        <div class="outs">${[0,1,2].map(i=>`<div class="out-dot ${i<state.outs?'on':''}"></div>`).join('')}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderGame(){
+  if(!state.gameStarted) return `<div class="empty-note">Set up both rosters first, then start the game.</div>`;
+  if(state.gameOver){
+    return `${renderGameOverBanner(true)}
+      <div class="empty-note">See the Box Score tab for full stats.</div>`;
+  }
+  const key = battingKey();
+  const bid = currentBatterId();
+  return `
+  ${renderDiamond()}
+  <div class="caption">${t('live_tap_runner')}${state.trackPitching ? `<br>${t('live_tap_pitcher')}` : ''}</div>
+  <div class="card merged-card">
+    <div class="merged-top">
+      <div class="batter-name">${orderNameJersey(key,bid)}</div>
+      <div class="count-inline">
+        <span class="cl">B</span><span class="cv">${state.count.balls}</span><span class="sep">-</span><span class="cv">${state.count.strikes}</span><span class="cl">S</span>
+        ${state.count.fouls? `<span class="foul-badge">${state.count.fouls} foul${state.count.fouls>1?'s':''}</span>` : ''}
+      </div>
+    </div>
+    <div class="merged-counts">
+      <div class="cbtn-grp"><button class="btn small ghost" onclick="subBall()">B−</button><button class="btn small ghost" onclick="addBall()">B+</button></div>
+      <div class="cbtn-grp"><button class="btn small ghost" onclick="subStrike()">S−</button><button class="btn small ghost" onclick="addStrike()">S+</button></div>
+      <button class="btn small ghost" onclick="addFoul()">Foul</button>
+      <button class="btn small ghost" style="margin-left:auto;" onclick="resetCount()">Reset</button>
+    </div>
+  </div>
+  <div class="outcome-row">
+    <div class="outcome-col">
+      <div class="side-label">${t('grp_on_base_short')}</div>
+      <div class="grid-btns-2">
+        <button onclick="applyOutcome('1B')">1B</button>
+        <button onclick="applyOutcome('2B')">2B</button>
+        <button onclick="applyOutcome('3B')">3B</button>
+        <button onclick="applyOutcome('HR')">HR</button>
+        <button onclick="applyOutcome('BB')">BB</button>
+        <button onclick="applyOutcome('HBP')">${t('out_hbp')}</button>
+        <button style="grid-column:1/3;" onclick="applyOutcome('E')">${t('out_e')}</button>
+      </div>
+    </div>
+    <div class="outcome-col">
+      <div class="grid-btns-2 out-actions">
+        <button onclick="applyOutcome('K')">${t('out_k')}</button>
+        <button onclick="applyOutcome('GO')">${t('out_go')}</button>
+        <button onclick="applyOutcome('FO')">${t('out_fo')}</button>
+        <button onclick="applyOutcome('PU')">${t('out_pu')}</button>
+        <button onclick="applyOutcome('SF')">${t('out_sf')}</button>
+        <button onclick="applyOutcome('SAC')">${t('out_sac')}</button>
+      </div>
+      <div class="side-label out">${t('grp_out_short')}</div>
+    </div>
+  </div>
+  ${state.trackPitching?`
+  <div class="card" style="margin-top:10px;">
+    <div style="font-size:13px; display:flex; justify-content:space-between; align-items:center;">
+      <span>Pitching (${team(fieldingKey()).name}): <b>${orderNameJersey(fieldingKey(),team(fieldingKey()).currentPitcherId)}</b></span>
+      <span class="mono" style="font-weight:800; color:var(--field-2);">${(ensurePitch(fieldingKey(),team(fieldingKey()).currentPitcherId).pitches||0) + state.count.balls + state.count.strikes + (state.count.fouls||0)} pitches</span>
+    </div>
+    <select onchange="switchPitcher('${fieldingKey()}', this.value)">
+      ${team(fieldingKey()).lineup.map(id=>`<option value="${id}" ${id===team(fieldingKey()).currentPitcherId?'selected':''}>${orderNameJersey(fieldingKey(),id)}</option>`).join('')}
+    </select>
+  </div>`:''}
+  <div class="log card" style="margin-top:10px;">${state.log.slice(0,8).map(l=>`<div>${l}</div>`).join('') || '<div class="empty-note">No plays yet</div>'}</div>
+  `;
+}
+
+function renderBox(){
+  function teamBlock(key){
+    const tm = team(key);
+    const ids = battingRosterIds(key);
+    const totals = {AB:0,R:0,H:0,RBI:0,BB:0,SO:0};
+    const body = ids.map(id=>{
+      const st = ensureStats(key,id);
+      const subbedOut = tm.lineup.length>0 && !tm.lineup.includes(id);
+      const subNote = subNoteText(key, id, true);
+      totals.AB+=st.AB; totals.R+=st.R; totals.H+=st.H; totals.RBI+=st.RBI; totals.BB+=st.BB; totals.SO+=st.SO;
+      return `<tr${subbedOut?' style="opacity:0.55;"':''}><td>${orderNameJersey(key,id)}${subNote?` <span style="font-size:10px;color:#8C8570;">${subNote}</span>`:''}</td><td>${st.AB}</td><td>${st.R}</td><td>${st.H}</td><td>${st.d2}</td><td>${st.d3}</td><td>${st.HR}</td><td>${st.RBI}</td><td>${st.BB}</td><td>${st.SO}</td><td>${st.SB}</td><td>${avg(st)}</td><td>${obp(st)}</td><td>${slg(st)}</td><td>${ops(st)}</td></tr>`;
+    }).join('');
+    const pitchRows = Object.keys(tm.pitchStats).map(id=>{
+      const ps = tm.pitchStats[id];
+      return `<tr><td>${orderNameJersey(key,id)}</td><td>${Math.floor(ps.outs/3)}.${ps.outs%3}</td><td>${ps.pitches||0}</td><td>${ps.H}</td><td>${ps.R}</td><td>${ps.ER}</td><td>${ps.BB}</td><td>${ps.K}</td></tr>`;
+    }).join('');
+    return `
+    <h2 class="section-title">${tm.name} — ${t('hdr_batting')}</h2>
+    <div class="card" style="overflow-x:auto;">
+      <table class="box">
+        <thead><tr><th>Player</th><th>AB</th><th>R</th><th>H</th><th>2B</th><th>3B</th><th>HR</th><th>RBI</th><th>BB</th><th>SO</th><th>SB</th><th>AVG</th><th>OBP</th><th>SLG</th><th>OPS</th></tr></thead>
+        <tbody>${body || `<tr><td colspan="15" class="empty-note">No stats yet</td></tr>`}</tbody>
+        <tfoot><tr style="font-weight:700;"><td>Total</td><td>${totals.AB}</td><td>${totals.R}</td><td>${totals.H}</td><td></td><td></td><td></td><td>${totals.RBI}</td><td>${totals.BB}</td><td>${totals.SO}</td><td></td><td></td><td></td><td></td><td></td></tr></tfoot>
+      </table>
+    </div>
+    ${state.trackPitching?`
+    <h2 class="section-title">${tm.name} — ${t('hdr_pitching')}</h2>
+    <div class="card" style="overflow-x:auto;">
+      <table class="box">
+        <thead><tr><th>Pitcher</th><th>IP</th><th>Pitches</th><th>H</th><th>R</th><th>ER</th><th>BB</th><th>K</th></tr></thead>
+        <tbody>${pitchRows || `<tr><td colspan="8" class="empty-note">No pitching yet</td></tr>`}</tbody>
+      </table>
+    </div>`:''}
+    `;
+  }
+  return `
+  ${state.gameOver? renderGameOverBanner(false) : ''}
+  <button class="btn clay block icon-btn" onclick="exportCSV()">${CSV_ICON}<span>${t('btn_export_csv')}</span></button>
+  ${teamBlock('us')}
+  ${teamBlock('them')}
+  <h2 class="section-title">${t('hdr_play_log')}</h2>
+  <div class="log card">${state.log.map(l=>`<div>${l}</div>`).join('') || '<div class="empty-note">No plays yet</div>'}</div>
+  `;
+}
+
+function renderScorebookGrid(){
+  if(!state.gameStarted) return `<div class="empty-note">Start the game to see the scorebook fill in.</div>`;
+  const key = state.scorebookTeam;
+  const tm = team(key);
+  const ids = battingRosterIds(key);
+  const curKey = battingKey();
+  const curBatter = state.gameOver? null : currentBatterId();
+  const maxInnSeen = Math.max(state.inning, 1);
+
+  // One column per "time through" per inning (extra columns only when the lineup looped). Columns key off the entry's
+  // subIndex (shared slot loop count, see nextSlotSubIndex) so a mid-loop sub lands in the right column;
+  // older saves lack subIndex and fall back to array position.
+  const entrySubIndex = (b, idx)=> (b.subIndex!==undefined ? b.subIndex : idx);
+  const columns = [];
+  for(let inn=1; inn<=maxInnSeen; inn++){
+    let maxSub = 0;
+    ids.forEach(pid=>{ getBoxes(key,pid,inn).forEach((b,idx)=>{ const si=entrySubIndex(b,idx); if(si>maxSub) maxSub=si; }); });
+    for(let j=0;j<=maxSub;j++){
+      columns.push({ inning: inn, subIndex: j, label: inn + (j>0 ? "'".repeat(j) : '') });
+    }
+  }
+  // Ensure the batter now up always has a column.
+  if(!state.gameOver && key===curKey && curBatter){
+    const curSub = currentSlotSubIndex(key);
+    if(!columns.some(c=>c.inning===state.inning && c.subIndex===curSub)){
+      columns.push({ inning: state.inning, subIndex: curSub, label: state.inning + (curSub>0 ? "'".repeat(curSub) : '') });
+    }
+  }
+  columns.sort((a,b)=> a.inning-b.inning || a.subIndex-b.subIndex);
+
+  const rows = ids.map(pid=>({ pid, isCurrent: !state.gameOver && key===curKey && pid===curBatter, subbedOut: tm.lineup.length>0 && !tm.lineup.includes(pid) }));
+
+  return `
+  <div class="row grid-print-hide" style="margin-bottom:10px;">
+    <button class="btn clay icon-btn tight-pad" onclick="printScorebook()">${PDF_ICON}<span>${t('btn_print_pdf')}</span></button>
+    <button class="btn clay icon-btn tight-pad" onclick="exportScorebookImage()">${IMAGE_ICON}<span>${t('btn_export_img')}</span></button>
+  </div>
+  <div class="teamtabs">
+    <button class="${state.scorebookTeam==='us'?'active':''}" onclick="state.scorebookTeam='us';render()">${team('us').name}</button>
+    <button class="${state.scorebookTeam==='them'?'active':''}" onclick="state.scorebookTeam='them';render()">${team('them').name}</button>
+  </div>
+  <div class="zoom-bar grid-print-hide">
+    <button onclick="zoomScorebook(-1)">−</button>
+    <div class="pct">${ZOOM_STEPS[state.scorebookZoom]}%</div>
+    <button onclick="zoomScorebook(1)">+</button>
+  </div>
+  <div class="caption" style="margin-bottom:6px;">${t('sb_tap_hint')}</div>
+  <div class="card" id="scorebookPrintArea" style="width:100%;">
+    <div style="font-weight:800; font-size:13px; margin-bottom:8px;">${tm.name} — ${t('hdr_batting')}</div>
+    <div class="grid-scroll">
+      <div class="grid-inner" style="transform:scale(${ZOOM_STEPS[state.scorebookZoom]/100});">
+      <table class="scorebook">
+        <thead><tr><th class="name-col">Batter</th>${columns.map(c=>`<th>${c.label}</th>`).join('')}</tr></thead>
+        <tbody>
+          ${rows.map(r=>{
+            const pid = r.pid;
+            const cells = columns.map(c=>{
+              const boxes = getBoxes(key, pid, c.inning);
+              const entry = boxes.find((b,idx)=>entrySubIndex(b,idx)===c.subIndex);
+              if(entry){
+                return `<td class="box-cell filled" onclick="openBoxDetail('${key}','${pid}',${c.inning})">${renderBoxPreview(entry, false)}</td>`;
+              } else if(r.isCurrent && c.inning===state.inning && c.subIndex===currentSlotSubIndex(key)){
+                return `<td class="box-cell current" onclick="setScreen('game')">${renderBoxPreview(null, true)}</td>`;
+              } else {
+                return `<td class="box-cell"></td>`;
+              }
+            }).join('');
+            const subNote = subNoteText(key, pid);
+            return `<tr>${r.subbedOut?'<td class="name-cell" style="opacity:0.55;">':'<td class="name-cell">'}${orderNameJersey(key,pid)}${subNote?` <span style="font-size:10px;color:#8C8570;">${subNote}</span>`:''}</td>${cells}</tr>`;
+          }).join('') || `<tr><td colspan="${columns.length+1}" class="empty-note">No batters yet</td></tr>`}
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+  <div class="card legend" style="font-size:11.5px; color:#5B5648;">
+    <ul style="margin:0; padding-left:18px; line-height:1.55;">
+      <li>${t('sb_legend_inning')}</li>
+      <li>${t('sb_legend_hit_bases')}</li>
+      <li>${t('sb_legend_count')}</li>
+      <li>${t('sb_legend_out_num')}</li>
+      <li>${t('sb_legend_path')}</li>
+      <li>${t('sb_legend_sb')}</li>
+      <li>${t('sb_legend_cs_po')}</li>
+      <li>${t('sb_legend_batter_num')}</li>
+      <li>${t('sb_legend_lob')}</li>
+    </ul>
+  </div>
+  `;
+}
+
+function renderBoxPreview(entry, isCurrent){
+  if(isCurrent && !entry){
+    return `<div class="box-inner">
+      <div style="position:absolute;top:22px;left:0;right:0;text-align:center;font-size:9px;font-weight:700;color:var(--field);">at bat</div>
+    </div>`;
+  }
+  if(!entry) return `<div class="box-inner"></div>`;
+  const centerLabel = entry.outPlay || entry.code || '';
+  const hitBases = ['1B','2B','3B','HR','BB'].includes(entry.code) ? entry.code : null;
+  return `
+  <div class="box-inner">
+    ${hitBases? `<div class="box-tl">${hitBases}</div>`:''}
+    <div class="box-tr">${entry.balls}-${entry.strikes}</div>
+    ${entry.outNumber? `<div class="box-br">${entry.outNumber}</div>`:''}
+    ${entry.dp? `<div class="box-bl">DP</div>`:''}
+    ${miniDiamond(entry.reached, centerLabel, entry.outAttemptTo, entry.legTags, entry.outAdvTag, entry.lob, entry.outBatterNum)}
+  </div>`;
+}
+
+function diamondSvgInner(reached, code, attemptTo, legTags, outAdvTag, lob, outBatterNum){
+  const seg = (idx)=> (legTags && legTags[idx] && idx<=reached) ? '#D8D2C2' : (idx<=reached ? '#2D6A4F' : '#D8D2C2');
+  const scored = reached>=4;
+  const label = code && code.length>7 ? code.slice(0,7) : (code||'');
+  const segCoords = {1:[30,52,52,30], 2:[52,30,30,8], 3:[30,8,8,30], 4:[8,30,30,52]};
+  // Leg labels sit outside each leg's normal: top legs (2, 3) pulled down, bottom legs (1, 4) up, clear of the batter circle.
+  const labelPos = {1:[47.4,43], 2:[47.4,20], 3:[12.6,20], 4:[12.6,43]};
+  // Batter-number circles sit further out so they don't collide with leg labels.
+  const batterLabelPos = {1:[52.5,52.5], 2:[52.5,7.5], 3:[7.5,7.5], 4:[7.5,52.5]};
+  const dotAttr = 'stroke-dasharray="2.5 2.5" stroke-linecap="butt"';
+  const legText = (pos,txt,fill)=>`<text x="${pos[0]}" y="${pos[1]}" font-size="6.5" font-weight="800" fill="${fill}" stroke="#F7F4EC" stroke-width="2.2" paint-order="stroke" text-anchor="middle" font-family="ui-monospace,monospace">${txt}</text>`;
+  const batterCircle = (pos,n)=>`<circle cx="${pos[0]}" cy="${pos[1]}" r="6" fill="#F7F4EC" stroke="#2D6A4F" stroke-width="1.2"></circle>
+          <text x="${pos[0]}" y="${pos[1]+2.8}" font-size="8" font-weight="800" fill="#2D6A4F" text-anchor="middle" font-family="ui-monospace,monospace">${n}</text>`;
+
+  // Per-leg tags (SB/WP/PB, FC, batterNum) persist per leg, so an SB on leg 2 survives a later advance to leg 3.
+  let legOverlays = '';
+  if(legTags){
+    Object.keys(legTags).forEach(legNumStr=>{
+      const legNum = Number(legNumStr);
+      if(legNum<1 || legNum>reached) return;
+      const {label: tagLabel, dotted, batterNum} = legTags[legNum];
+      const [x1,y1,x2,y2] = segCoords[legNum];
+      // The solid leg is skipped (see seg()), so this overlay is the only line; dotted shows clearly on the plain background.
+      legOverlays += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#2D6A4F" stroke-width="${dotted?3:4}" ${dotted? dotAttr : 'stroke-linecap="square"'}></line>`;
+      if(tagLabel) legOverlays += legText(labelPos[legNum], tagLabel, '#2D6A4F');
+      if(batterNum) legOverlays += batterCircle(batterLabelPos[legNum], batterNum);
+    });
+  }
+
+  // Out attempt: amber leg, dotted + CS/PO/WP/PB tag when applicable, plus the batter-number circle (green: it identifies
+  // the batter). Drawn here because this leg is never in legTags.
+  let attemptLine = '';
+  if(attemptTo && attemptTo===reached+1 && attemptTo<=4){
+    const [x1,y1,x2,y2] = segCoords[attemptTo];
+    const mx = x1+(x2-x1)/2, my = y1+(y2-y1)/2;
+    const isDotted = !!outAdvTag;
+    attemptLine = `<line x1="${x1}" y1="${y1}" x2="${mx}" y2="${my}" stroke="#FFB800" stroke-width="4" stroke-linecap="round" ${isDotted?dotAttr:''}></line>`;
+    if(isDotted) attemptLine += legText(labelPos[attemptTo], outAdvTag, '#8a6100');
+    if(outBatterNum) attemptLine += batterCircle(batterLabelPos[attemptTo], outBatterNum);
+  }
+  return `
+    ${scored? `<polygon points="30,52 52,30 30,8 8,30" fill="#FFB800" opacity="0.3"></polygon>`:''}
+    <line x1="30" y1="52" x2="52" y2="30" stroke="${seg(1)}" stroke-width="4" stroke-linecap="square"></line>
+    <line x1="52" y1="30" x2="30" y2="8"  stroke="${seg(2)}" stroke-width="4" stroke-linecap="square"></line>
+    <line x1="30" y1="8"  x2="8"  y2="30" stroke="${seg(3)}" stroke-width="4" stroke-linecap="square"></line>
+    <line x1="8"  y1="30" x2="30" y2="52" stroke="${seg(4)}" stroke-width="4" stroke-linecap="square"></line>
+    ${legOverlays}
+    ${attemptLine}
+    ${lob
+      ? `<text x="30" y="35" text-anchor="middle" font-size="11.3" font-weight="700" fill="#1C2621" font-family="Georgia,'Times New Roman',serif">&#8467;</text>`
+      : (label? `<text x="30" y="33" text-anchor="middle" font-size="${(label==='K'||label==='Ks')?10:8.5}" font-weight="${(label==='K'||label==='Ks')?900:800}" fill="#1C2621" ${(label==='K'||label==='Ks')?'stroke="#1C2621" stroke-width="0.45" paint-order="stroke fill"':''} font-family="ui-monospace,monospace">${label}</text>`:'')}`;
+}
+function miniDiamond(reached, code, attemptTo, legTags, outAdvTag, lob, outBatterNum){
+  return `<svg width="45" height="45" viewBox="0 0 60 60" style="position:absolute; top:14px; left:50%; margin-left:-22.5px; width:45px; height:45px; display:block;">${diamondSvgInner(reached, code, attemptTo, legTags, outAdvTag, lob, outBatterNum)}</svg>`;
+}
+function largeDiamond(reached, code, attemptTo, legTags, outAdvTag, size, lob, outBatterNum){
+  size = size || 92;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 60 60" style="display:block; margin:0 auto;">${diamondSvgInner(reached, code, attemptTo, legTags, outAdvTag, lob, outBatterNum)}</svg>`;
+}
+
+const ZOOM_STEPS = [80,100,125,150,175,200];
+function zoomScorebook(dir){
+  state.scorebookZoom = Math.max(0, Math.min(ZOOM_STEPS.length-1, state.scorebookZoom+dir));
+  render();
+}
+function openBoxDetail(teamKey, playerId, inning){
+  state.sheet = { outcome:'BOX_DETAIL', teamKey, playerId, inning, editIndex:null };
+  render();
+}
+function startEditBoxEntry(idx){
+  if(!state.sheet) return;
+  pushHistory();
+  const { teamKey, playerId, inning } = state.sheet;
+  const entry = getBoxes(teamKey, playerId, inning)[idx];
+  state.sheet.editIndex = idx;
+  state.sheet.editSeq = [];
+  state.sheet.editPrefix = 'none';
+  state.sheet.editDP = !!(entry && entry.dp);
+  render();
+}
+function cancelEditBoxEntry(){
+  if(state.sheet) state.sheet.editIndex = null;
+  render();
+}
+function editEntryCount(field, delta){
+  if(!state.sheet) return;
+  const { teamKey, playerId, inning, editIndex } = state.sheet;
+  const entry = getBoxes(teamKey, playerId, inning)[editIndex];
+  if(!entry) return;
+  entry[field] = Math.max(0, Math.min(5, entry[field] + delta));
+  render();
+}
+function tapEditFielder(n){ if(state.sheet){ state.sheet.editSeq.push(n); render(); } }
+function undoEditFielder(){ if(state.sheet){ state.sheet.editSeq.pop(); render(); } }
+function setEditPrefix(p){ if(state.sheet){ state.sheet.editPrefix = p; render(); } }
+function toggleEditDP(){ if(state.sheet){ state.sheet.editDP = !state.sheet.editDP; render(); } }
+function composeEditAnnotation(includeDP=true){
+  const s = state.sheet;
+  if(!s) return '';
+  const seq = (s.editSeq||[]).join('-');
+  let text;
+  if(s.editPrefix==='none') text = seq;
+  else if(s.editPrefix==='F') text = seq? 'F-'+seq : 'F';
+  else if(s.editPrefix==='E') text = seq? 'E'+seq : 'E';
+  else text = seq? `${s.editPrefix} ${seq}` : s.editPrefix;
+  if(includeDP && s.editDP) text = text? text+' DP' : 'DP';
+  return text;
+}
+function applyEditAnnotation(){
+  if(!state.sheet) return;
+  const { teamKey, playerId, inning, editIndex } = state.sheet;
+  const entry = getBoxes(teamKey, playerId, inning)[editIndex];
+  const composed = composeEditAnnotation(false); // DP excluded from centre label
+  if(entry){
+    if(composed) entry.outPlay = composed;
+    entry.dp = !!state.sheet.editDP; // drives the .box-bl "DP" badge in the grid
+  }
+  state.sheet.editIndex = null;
+  render();
+}
+
+function printScorebook(){ window.print(); }
+async function exportScorebookImage(){
+  let html2canvas;
+  try{ html2canvas = await loadLib('html2canvas'); }
+  catch(e){
+    alert('Image export needs an internet connection to load the export library. Try Print / Save as PDF instead if offline.');
+    return;
+  }
+  const el = document.getElementById('scorebookPrintArea');
+  html2canvas(el, {
+    backgroundColor:'#ffffff',
+    scale: 2,
+    width: el.scrollWidth,
+    height: el.scrollHeight,
+    windowWidth: el.scrollWidth,
+    windowHeight: el.scrollHeight,
+    scrollX: 0,
+    scrollY: 0,
+    useCORS: true
+  }).then(canvas=>{
+    canvas.toBlob(blob=>{
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${team(state.scorebookTeam).name}_scorebook.png`.replace(/\s+/g,'_');
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  });
+}
+
+// Flags runner-movement choices that would put two people on one base. Shared by the hit and OUT_PLAY sheets
+// (same stay/advance/score/out choices).
+function computeBaseAssignments(s){
+  const bases = {1:[],2:[],3:[]};
+  if(s.outcome==='HR') return bases; // every existing runner scores, batter scores — no base collisions possible
+  (s.runners||[]).forEach(r=>{
+    const nm = `#${r.num} ${r.name}`;
+    if(r.choice==='stay') bases[r.base].push(nm);
+    else if(r.choice==='advance1'){ const nb=r.base+1; if(nb<=3) bases[nb].push(nm); }
+    else if(r.choice==='advance2'){ const nb=r.base+2; if(nb<=3) bases[nb].push(nm); }
+  });
+  let battb = null;
+  if(s.outcome==='OUT_PLAY'){ if(!s.batter.out) battb = 1; }
+  else { const dest = batterDestBase(s.kind || s.outcome); if(typeof dest==='number') battb = dest; }
+  if(battb) bases[battb].push('Batter');
+  return bases;
+}
+function baseCollisionMessages(s){
+  const bases = computeBaseAssignments(s);
+  const labels = {1:'1st',2:'2nd',3:'3rd'};
+  const msgs = [];
+  [1,2,3].forEach(b=>{ if(bases[b].length>1) msgs.push(`${bases[b].join(' & ')} would both be on ${labels[b]}`); });
+  return msgs;
+}
+
+function previewBasesForSheet(s){
+  const key = battingKey();
+  const bases = {1:null,2:null,3:null};
+  const scored = [];
+  if(s.outcome==='HR'){
+    (s.runners||[]).forEach(r=>scored.push(r));
+  } else {
+    (s.runners||[]).slice().sort((a,b)=>b.base-a.base).forEach(r=>{
+      if(r.choice==='stay') bases[r.base]=r;
+      else if(r.choice==='advance1'){ const nb=r.base+1; if(nb<=3) bases[nb]=r; else scored.push(r); }
+      else if(r.choice==='advance2'){ const nb=r.base+2; if(nb<=3) bases[nb]=r; else scored.push(r); }
+      else if(r.choice==='score') scored.push(r);
+    });
+  }
+  const dest = batterDestBase(s.kind || s.outcome);
+  const batter = { id: currentBatterId(), name: playerName(key, currentBatterId()), num: playerNum(key, currentBatterId()) };
+  if(s.outcome==='OUT_PLAY'){
+    if(!s.batter.out) bases[1]=batter; // safe batter ends at 1st
+  } else if(dest==='home') scored.push(batter); else if(dest) bases[dest]=batter;
+  return {bases, scored};
+}
+// Shared by every fielder-picking sheet: field art plus a circle+number marker per position. Tapped fielders (seq) go amber
+// with order badges and chain lines. bases/runnerLabels come only from the movement sheets; the others show an empty field.
+function fielderFieldHTML(seq, bases, runnerLabels){
+  bases = bases || {};
+  const fs = fieldFielderFontSize(FIELD_RENDER_W_SM);
+  const markers = Object.keys(FIELD_FIELDERS).map(n=>{
+    const f = FIELD_FIELDERS[n];
+    const idx = seq.indexOf(Number(n));
+    const on = idx>=0;
+    return `<circle cx="${f.x}" cy="${f.y}" r="${fs*(on?1.0:0.8)}" fill="${on?'#FFB800':'rgba(255,255,255,0.75)'}" stroke="${on?'#8a6100':'#8C8570'}" stroke-width="${fs*0.09}"></circle>
+      <text x="${f.x}" y="${f.y+fs*0.34}" text-anchor="middle" font-size="${fs}" font-weight="800" fill="${on?'#1C2621':'#5B5648'}" font-family="ui-monospace,monospace">${n}</text>
+      ${on && seq.length>1 ? `<text x="${f.x+fs*1.05}" y="${f.y-fs*0.7}" text-anchor="middle" font-size="${fs*0.85}" font-weight="900" fill="#5a4000" font-family="ui-monospace,monospace">${idx+1}</text>` : ''}`;
+  }).join('');
+  const chain = seq.slice(0,-1).map((n,i)=>{
+    const p1 = FIELD_FIELDERS[n], p2 = FIELD_FIELDERS[seq[i+1]];
+    return `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#FFB800" stroke-width="${fs*0.12}" stroke-linecap="round" opacity="0.85"></line>`;
+  }).join('');
+  return `
+  <div class="fld">
+    <svg viewBox="${FIELD_VIEWBOX}">
+      ${FIELD_BACKGROUND_SVG}
+      ${fieldBaseRect(2, !!bases[2])}
+      ${fieldBaseRect(1, !!bases[1])}
+      ${fieldBaseRect(3, !!bases[3])}
+      <g>${chain}${markers}</g>
+      ${runnerLabels||''}
+    </svg>
+  </div>`;
+}
+const FIELDER_POS = ['P','C','1B','2B','3B','SS','LF','CF','RF'];
+const LEGEND_HTML = `<div class="legend">${FIELDER_POS.map((p,i)=>`<span>${i+1} ${p}</span>`).join('')}</div>`;
+function closeSheet(){ state.sheet = null; render(); }
+// Standard sheet: header (title + optional context), body, pinned [Cancel | primary] bar. lock = backdrop tap doesn't dismiss
+// (entry sheets). cancel = {label, fn}; primary = {label, fn, disabled}; tall = 96dvh (field sheets).
+function sheetShell({title, ctx, body, primary, cancel, tall, lock}){
+  cancel = cancel || {label:'Cancel', fn:'closeSheet()'};
+  return `${lock ? '<div class="sheet-backdrop"></div>' : SHEET_BACKDROP}
+  <div class="sheet has-bar${tall?' tall':''}">
+    <div class="sh-head"><h3>${title}</h3>${ctx?`<span class="sh-ctx">${ctx}</span>`:''}</div>
+    ${body}
+    <div class="sheet-actions"><button class="btn ghost" onclick="${cancel.fn}">${cancel.label}</button>${primary?`<button class="btn" ${primary.disabled?'disabled':''} onclick="${primary.fn}">${primary.label}</button>`:''}</div>
+  </div>`;
+}
+// o: {sel, out (orange), adv (green outline), disabled, cls}
+function chip(label, fn, o){
+  o = o||{};
+  return `<button class="chip${o.sel?' sel':''}${o.out?' out':''}${o.adv?' adv':''}${o.cls?' '+o.cls:''}"${o.disabled?' disabled':''} onclick="${fn}">${label}</button>`;
+}
+// kind: 'out' (orange), 'ok' (green), 'warn'
+function bannerHTML(kind, html){ return `<div class="banner ${kind}">${html}</div>`; }
+// Field (left) + banner, notes and legend (right): the top block of every field sheet.
+function fieldBlock(seq, bases, runnerLabels, banner, notes){
+  return `<div class="field-block">${fielderFieldHTML(seq, bases, runnerLabels)}<div class="fb-side">${banner}${notes||''}${LEGEND_HTML}</div></div>`;
+}
+// Field block for the runner-movement sheets (hit confirm / out play): base preview, scoring and active-fielder notes.
+function movementField(s, banner, extraNote){
+  const {bases, scored} = previewBasesForSheet(s);
+  const key = battingKey();
+  const seq = activeSeqFor(s);
+  const runnerFs = fieldFielderFontSize(FIELD_RENDER_W_SM) * 1.15; // runner-jersey tag: 15% larger than the fielder digits
+  const runnerLabels = [1,2,3].map(n=>{
+    const r = bases[n]; if(!r) return '';
+    const p = fieldLabelPos(n);
+    return `<text x="${p.x}" y="${p.y}" font-family="ui-monospace,monospace" font-size="${runnerFs}" font-weight="900" fill="#FFB800" stroke="#8a6100" stroke-width="${runnerFs*0.11}" paint-order="stroke fill" text-anchor="middle">${battingOrderNum(key, r.id)||''}</text>`;
+  }).join('');
+  const notes = (scored.length ? `<div class="fb-note score">Scoring: ${scored.map(r=>orderNameJersey(key,r.id)).join(', ')}</div>` : '')
+    + (extraNote ? `<div class="fb-note">${extraNote}</div>` : '')
+    + (seq.length ? `<div class="fb-note">fielders for: <b style="color:var(--field-2);">${s.activeSubject==='batter'?'Batter':'runner on '+({1:'1st',2:'2nd',3:'3rd'}[s.activeSubject])}</b></div>` : '')
+    + (s.outOrder && s.outOrder.length>=2 ? `<div class="fb-note">Tap <span class="x-badge">×</span> to swap out order</div>` : '');
+  return fieldBlock(seq, bases, runnerLabels, banner, notes);
+}
+// Row of 1-9 tap buttons. fnPrefix = onclick call up to the position number, e.g. 'tapEditFielder(' or 'sheetOutFieldTap(2,'.
+function fielderBtnRow(fnPrefix){
+  return `<div class="chips">${FIELDER_POS.map((p,i)=>`<button class="chip num" title="${p}" onclick="${fnPrefix}${i+1})">${i+1}</button>`).join('')}</div>`;
+}
+function undoChip(fn, label){ return `<button class="chip undo" onclick="${fn}">↺ ${label||'Undo'}</button>`; }
+// "Fielders  6-4 [↺ Undo] [extra]" label line above a fielderBtnRow; extra = e.g. the DP toggle.
+function fielderLine(label, seq, undoFn, extra){
+  return `<div class="ln" style="margin:2px 0 4px;"><span class="lbl" style="width:auto;">${label}</span><span style="display:flex;align-items:center;gap:6px;"><span class="seq">${seq.join('-')}</span>${undoChip(undoFn)}${extra||''}</span></div>`;
+}
+// "Out at" chip row: opts = [[value,label],...].
+function outAtRow(opts, selected, fnPrefix){
+  return `<div class="ln"><span class="lbl">Out at</span><div class="chips" style="flex:1;">${opts.map(([v,l])=>chip(l, `${fnPrefix}${v})`, {out:true, sel:selected===v})).join('')}</div></div>`;
+}
+// Runner row shared by the OUT_PLAY and hit-confirm sheets. showDpToggle: OUT_PLAY derives DP from outOrder,
+// so only the hit sheet needs the manual toggle.
+function renderRunnerRow(r, s, showDpToggle){
+  const b = r.base, idx = s.outOrder.indexOf(b), ord = battingOrderNum(battingKey(),r.id);
+  const badge = idx>=0 ? `<div class="out-badge ${s.swapSelect===b?'sel':''}" onclick="outPlayTapBadge(${b})">${idx+1}</div>` : '';
+  const ch = (label, choice)=> chip(label, `sheetChoose(${b},'${choice}')`, {sel:r.choice===choice});
+  return `
+  <div class="runner-row">
+    <div class="rname ln"><span>${ord?ord+'. ':''}${r.name} (on ${b===1?'1st':b===2?'2nd':'3rd'})</span>${badge}</div>
+    <div class="chips">${ch('Stays','stay')}${ch('+1 base','advance1')}${ch('+2 bases','advance2')}${ch('Scores','score')}${chip('Out', `sheetChoose(${b},'out')`, {out:true, sel:r.choice==='out'})}</div>
+    ${r.choice==='out' ? `
+    <div style="margin-top:5px;">${outAtRow(outTargetOptions(b).map(o=>[o.v,o.label]), r.outTarget, `sheetChoose(${b},'out',`)}</div>
+    ${fielderLine('Fielders', r.outFieldSeq||[], `sheetOutFieldUndo(${b})`, showDpToggle ? chip('DP', `sheetToggleRunnerPrefix(${b},'DP')`, {out:true, sel:r.outPrefix==='DP', cls:'sq'}) : '')}
+    ${fielderBtnRow(`sheetOutFieldTap(${b},`)}` : ''}
+  </div>`;
+}
+function renderSheet(){
+  const s = state.sheet;
+  if(!s) return '';
+  if(s.outcome==='SCAN_CROP'){
+    const picked = s.pickedColors||[];
+    const activeStyle = 'border-color:var(--field-2);background:#F0F7F3;';
+    const res = s.scanResult;
+    return `
+    <div class="sheet-backdrop"></div>
+    <div class="sheet tall">
+      <h3>${t('scan_crop_title')}</h3>
+      <div class="sub" style="font-size:11px;color:#8C8570;margin-bottom:10px;">${t('scan_crop_hint')}</div>
+      <div id="scanCropWrap" style="position:relative; display:flex; justify-content:center;">
+        <canvas id="scanCropCanvas" style="touch-action:none; max-width:100%; max-height:42vh; width:auto; height:auto; border-radius:8px; border:1.5px solid var(--line);"></canvas>
+      </div>
+      ${(s.detected && s.detected.length) ? `<div style="text-align:center;font-size:10.5px;color:#8C8570;margin-top:4px;">${t('scan_legend')}</div>` : ''}
+      <label style="margin-top:10px;">${t('lbl_fine_tilt')}: <span id="scanTiltVal">${s.tiltDeg||0}</span>°</label>
+      <input type="range" min="-45" max="45" step="1" value="${s.tiltDeg||0}" style="width:100%;margin-bottom:6px;" oninput="scanCropTiltChange(this.value)">
+      <div class="row" style="justify-content:center; gap:6px;">
+        <button class="btn ghost small" style="flex:none;padding:7px 10px;" onclick="scanCropRotate90(-1)">⟲ ${t('btn_rotate_left')}</button>
+        <button class="btn ghost small" style="flex:none;padding:7px 10px;" onclick="scanCropReset()">${t('btn_reset_crop')}</button>
+        <button class="btn ghost small" style="flex:none;padding:7px 10px;" onclick="scanCropRotate90(1)">⟳ ${t('btn_rotate_right')}</button>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; margin-top:14px;">
+        <div style="flex:0 0 34%; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#8C8570; line-height:1.25;">${t('lbl_card_color')}</div>
+        <div class="row" style="flex:1;">
+          <button class="btn ghost small" style="${!picked.length&&!s.pickMode?activeStyle:''}" onclick="scanColorAuto()">${t('btn_color_auto')}</button>
+          <button class="btn ghost small" style="${s.pickMode?activeStyle:''}" onclick="scanColorPick()">${t('btn_color_pick')}</button>
+        </div>
+      </div>
+      ${picked.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 0;">${picked.map((c,i)=>`<span style="display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:14px;padding:3px 8px;font-size:11px;"><i style="width:14px;height:14px;border-radius:4px;border:1px solid #0003;display:inline-block;background:rgb(${c});"></i>rgb(${c})<a onclick="scanColorRemove(${i})" style="color:var(--clay);padding:0 2px;">✕</a></span>`).join('')}</div>` : ''}
+      ${s.pickMode ? `<div class="sub" style="font-size:11px;color:var(--clay);font-weight:700;margin-top:6px;">${t('scan_pick_hint')}</div>` : ''}
+      <div class="row" style="margin-top:10px;">
+        <button class="btn" onclick="scanRunDirect()">${t('btn_ocr_direct')}</button>
+        <button class="btn" onclick="scanRunRows()">${t('btn_ocr_rows')}</button>
+      </div>
+      ${res ? `
+      <div id="scanResult" style="margin-top:14px;border-top:1px dashed var(--line);padding-top:10px;">
+        <label>${t('scan_result_title')}</label>
+        ${res.note ? `<div style="font-size:11.5px;font-weight:700;margin-bottom:6px;color:${res.text?'#8C8570':'var(--clay)'};">${escapeHtml(res.note)}</div>` : ''}
+        ${res.text ? `<div style="white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12.5px;background:#FAF8F2;border:1px solid var(--line);border-radius:8px;padding:8px 10px;max-height:160px;overflow-y:auto;">${escapeHtml(res.text)}</div>` : ''}
+      </div>` : ''}
+      <div class="row" style="margin-top:14px;">
+        <button class="btn ghost" onclick="scanCropCancel()">${t('btn_scan_retake')}</button>
+        <button class="btn" ${res&&res.text?'':'disabled'} onclick="scanResultOk()">${t('btn_ok')}</button>
+      </div>
+    </div>`;
+  }
+  if(s.outcome==='SCAN_LOADING'){
+    return `
+    <div class="sheet-backdrop"></div>
+    <div class="sheet">
+      <h3>${t('scan_loading_title')}</h3>
+      <div class="sub">${t('scan_loading_sub')}</div>
+      <div class="spinner"></div>
+      <div class="loading-text">${t('scan_loading_note')}</div>
+    </div>`;
+  }
+  if(s.outcome==='STRIKEOUT_TYPE'){
+    return sheetShell({ title:'Strikeout — looking or swinging?',
+      body:`<div class="chips">${chip('Looking (K)', "chooseStrikeoutType('K')", {out:true})}${chip('Swinging (Ks)', "chooseStrikeoutType('Ks')", {out:true})}</div>` });
+  }
+  if(s.outcome==='BOX_DETAIL'){
+    const boxes = getBoxes(s.teamKey, s.playerId, s.inning);
+    const who = `#${playerNum(s.teamKey,s.playerId)} ${playerName(s.teamKey,s.playerId)}`;
+    const eb = (s.editIndex!==null && s.editIndex!==undefined) ? boxes[s.editIndex] : null;
+    if(eb){
+      const pre = (label,p)=> chip(label, `setEditPrefix('${p}')`, {sel:s.editPrefix===p});
+      const cnt = (lbl,f)=> `<span class="cnt-grp"><span class="lbl" style="width:auto;">${lbl}</span>${chip('−', `editEntryCount('${f}',-1)`, {cls:'sq'})}<b>${eb[f]}</b>${chip('+', `editEntryCount('${f}',1)`, {cls:'sq'})}</span>`;
+      return sheetShell({ title:`${who} · Inn ${s.inning} · PA ${s.editIndex+1}`, ctx:'Editing', tall:true,
+        body:`<div class="cnt">${cnt('B','balls')}${cnt('S','strikes')}</div>
+          ${fieldBlock(s.editSeq||[], null, '', bannerHTML('ok', `Annotation:<br><b>${composeEditAnnotation()||'—'}</b>`), undoChip('undoEditFielder()', 'Undo fielder'))}
+          <div class="chips" style="margin-bottom:3px;">${pre('Plain','none')}${pre('Fly','F')}${pre('FC','FC')}${pre('E','E')}${pre('SF','SF')}</div>
+          <div class="chips" style="margin-bottom:8px;">${pre('SH','SH')}${pre('CS','CS')}${pre('PO','PO')}${chip('+DP', 'toggleEditDP()', {sel:s.editDP})}<span style="flex:1;"></span></div>
+          ${fielderBtnRow('tapEditFielder(')}
+          <div class="sh-sub" style="margin-top:8px;">Edits count and annotation only, not score, outs, or stats. Use Undo on Live for those.</div>`,
+        primary:{label:'Apply', fn:'applyEditAnnotation()'}, cancel:{label:'Cancel', fn:'cancelEditBoxEntry()'} });
+    }
+    const baseLabel = (r)=> ['out','1st','2nd','3rd','scored'][r] || '—';
+    return sheetShell({ title:`${who} — Inning ${s.inning}`, cancel:{label:'Close', fn:'closeSheet()'},
+      body:`${boxes.map((b,i)=>{
+        const centerLabel = b.outPlay || b.code || '';
+        return `
+        <div class="sb-detail-row" style="flex-direction:column; align-items:flex-start; gap:2px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:10px;">
+            <div style="flex:none;">${largeDiamond(b.reached, centerLabel, b.outAttemptTo, b.legTags, b.outAdvTag, 96, b.lob, b.outBatterNum)}</div>
+            <div style="flex:1; min-width:0;">
+              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                <div style="font-weight:700;">Plate appearance ${i+1}: ${b.code}${b.outPlay && b.outPlay!==b.code? ` → ${b.outPlay}`:''}${b.dp? ' · DP':''}</div>
+                <button class="btn small ghost" onclick="startEditBoxEntry(${i})">Edit</button>
+              </div>
+              <div style="font-size:12px; color:#8C8570;">
+                Reached: ${baseLabel(b.reached)}${b.isOut? ` · Out #${b.outNumber}`:''} · count ${b.balls}-${b.strikes}${b.fouls? ` · ${b.fouls} foul${b.fouls>1?'s':''}`:''}
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }).join('') || '<div class="empty-note">No plate appearances recorded.</div>'}
+      <div class="sh-sub" style="margin-top:8px;">Editing here only fixes the pitch count and annotation — it doesn't change the score, outs, or stats. For that, use Undo on the Live tab and re-enter the play.</div>` });
+  }
+  if(s.outcome==='RUNNER_EVENT'){
+    const r = s.runners[0];
+    const rl = orderNameJersey(battingKey(), r.id);
+    if(s.mode==='choose_wp_pb'){
+      const adv = s.pendingAction==='advance';
+      return sheetShell({ title:`${rl} — ${adv?'Advances':'Thrown out advancing'}`, cancel:{label:'← Back', fn:'backToRunnerMain()'},
+        body:`<div class="sh-sub">Was it a wild pitch or a passed ball?</div>
+          <div class="chips">${chip('Wild Pitch', "selectWpPbType('WP')", {adv, out:!adv})}${chip('Passed Ball', "selectWpPbType('PB')", {adv, out:!adv})}</div>` });
+    }
+    if(s.mode==='out_entry'){
+      const reasonLabel = s.outReason==='OOB' ? `Thrown Out Advancing (${s.wpType})` : {CS:'Caught Stealing', PO:'Picked Off'}[s.outReason];
+      const seq = s.fieldSeq||[];
+      return sheetShell({ title:`${rl} — ${reasonLabel}`, tall:true, lock:true,
+        cancel:{label:'← Back', fn:'backToRunnerMain()'}, primary:{label:'Confirm out', fn:'confirmRunnerOut()'},
+        body:`<div class="sh-sub">Tap the fielders involved, in order (optional).</div>
+          ${fieldBlock(seq, null, '', bannerHTML('out', `Fielders:<br><b>${seq.join('-')||'—'}</b>`), undoChip('undoRunnerOutFielder()', 'Undo fielder'))}
+          ${fielderBtnRow('tapRunnerOutFielder(')}` });
+    }
+    const blocked = stealAdvanceBlocked(s.baseTapped);
+    return sheetShell({ title:`Runner: ${rl}`, ctx:`on ${{1:'1st',2:'2nd',3:'3rd'}[s.baseTapped]}`,
+      body:`${blocked ? `<div style="margin-bottom:8px;">${bannerHTML('warn','Next base occupied — only outs possible')}</div>` : ''}
+        <div class="pick-cols">
+          <div class="pick-col"><div class="pick-head" style="color:var(--field-2);">Advance</div>
+            ${chip('Steals next base', "runnerAdvance('steal')", {adv:true, disabled:blocked})}
+            ${chip('Advances (WP/PB)', "chooseWpPb('advance')", {adv:true, disabled:blocked})}</div>
+          <div class="pick-col"><div class="pick-head" style="color:var(--clay);">Out</div>
+            ${chip('Caught stealing', "startRunnerOutEntry('CS')", {out:true})}
+            ${chip('Out advancing (WP/PB)', "chooseWpPb('out')", {out:true})}
+            ${chip('Picked off', "startRunnerOutEntry('PO')", {out:true})}</div>
+        </div>` });
+  }
+  if(s.outcome==='OUT_PLAY'){
+    const finalKind = deriveOutPlayKind(s);
+    const batterIdx = s.outOrder.indexOf('batter');
+    const batterBadge = batterIdx>=0 ? `<div class="out-badge ${s.swapSelect==='batter'?'sel':''}" onclick="outPlayTapBadge('batter')">${batterIdx+1}</div>` : '';
+    const collisions = baseCollisionMessages(s);
+    const canConfirm = (s.outOrder.length>0 || s.kind==='E') && !collisions.length;
+    const banner = canConfirm
+      ? bannerHTML(s.outOrder.length?'out':'ok', `Recorded as:<br><b>${OUTCOME_LABELS[finalKind]||finalKind}</b>`)
+      : bannerHTML('warn', collisions.length ? `${collisions.join('; ')} — fix before confirming.` : 'Mark at least one out, or cancel and use a hit/error button.');
+    const batterSection = `
+      <div class="runner-row">
+        <div class="rname ln"><span>Batter <span class="pill ${s.batter.out?'out':'safe'}" style="margin-left:6px;">${s.batter.out?'Out':'Safe'}</span></span>${batterBadge}</div>
+        ${s.batter.out ? outAtRow([[1,'1st'],[2,'2nd'],[3,'3rd'],[4,'Home']], s.batter.outAt||1, 'outPlaySetBatterOutAt(') : ''}
+        ${(s.batter.out || s.kind==='E') ? fielderLine(s.kind==='E' ? 'Error charged to' : 'Fielders', s.batter.seq, 'outPlayUndoBatterFielder()') + fielderBtnRow('outPlayTapBatterFielder(') : ''}
+      </div>`;
+    return sheetShell({ title:OUTCOME_LABELS[s.kind]||s.kind, tall:true, lock:true,
+      body:`${movementField(s, banner)}${batterSection}${s.runners.map(r=>renderRunnerRow(r, s, false)).join('')}`,
+      primary:{label:'Confirm play', fn:'confirmOutPlay()', disabled:!canConfirm} });
+  }
+  if(s.outcome==='SUB_PLAYER'){
+    const tm = team(s.teamKey);
+    const outId = tm.lineup[s.lineupIndex];
+    const bench = tm.players.filter(p=>!tm.lineup.includes(p.id));
+    return sheetShell({ title:`Substitute for ${orderNameJersey(s.teamKey,outId)}`,
+      body: bench.length ? bench.map(p=>`
+        <div class="lineup-pick" onclick="confirmSub('${p.id}')">
+          <span>${p.num.trim()!==''?'#'+p.num+' ':''}${p.name||'(no name)'}</span>
+        </div>`).join('') : '<div class="empty-note">No eligible bench players — add one on the Roster tab first.</div>' });
+  }
+  if(s.outcome==='CHANGE_BATTER'){
+    const t = team(s.teamKey);
+    return sheetShell({ title:`Set current batter — ${t.name}`,
+      body:t.lineup.map((id,i)=>`
+        <div class="lineup-pick ${i===t.battingIdx?'cur':''}" onclick="setBatter('${id}')">
+          <span>${orderNameJersey(s.teamKey,id)}</span>
+          ${i===t.battingIdx?'<span class="pill">At bat</span>':''}
+        </div>`).join('') });
+  }
+  if(s.outcome==='SWITCH_PITCHER'){
+    const tm = team(s.teamKey);
+    return sheetShell({ title:`Set current pitcher — ${tm.name}`,
+      body:tm.lineup.map(id=>`
+        <div class="lineup-pick ${id===tm.currentPitcherId?'cur':''}" onclick="confirmSwitchPitcher('${id}')">
+          <span>${orderNameJersey(s.teamKey,id)}</span>
+          ${id===tm.currentPitcherId?'<span class="pill">Pitching</span>':''}
+        </div>`).join('') });
+  }
+  // Hit confirm (1B/2B/3B) with runners on
+  const label = OUTCOME_LABELS[s.outcome];
+  const willBeFC = ['1B','2B','3B'].includes(s.outcome) && s.runners.some(r=>r.choice==='out');
+  const collisions = baseCollisionMessages(s);
+  const banner = collisions.length ? bannerHTML('warn', `${collisions.join('; ')} — fix before confirming.`)
+    : willBeFC ? bannerHTML('out', `Recorded as:<br><b>Fielder's Choice</b>`) : bannerHTML('ok', `Recorded as:<br><b>${label}</b>`);
+  return sheetShell({ title:label, tall:true, lock:true,
+    body:`${movementField(s, banner, willBeFC ? 'no hit credited' : '')}${s.runners.map(r=>renderRunnerRow(r, s, true)).join('')}`,
+    primary:{label:'Confirm play', fn:'confirmSheet()', disabled:collisions.length>0} });
+}
+
+restoreAutosaveIfAny();
+render();
+</script>
+</body>
+</html>
